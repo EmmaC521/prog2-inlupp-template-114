@@ -57,7 +57,8 @@ public class ListGraph<T> implements Graph<T> {
 
   @Override
   public Edge<T> getEdgeBetween(T node1, T node2) {
-    if (!cities.containsKey(node1) || !cities.containsKey(node2)) throw new IllegalArgumentException("En av platserna saknas");
+    if (!cities.containsKey(node1) || !cities.containsKey(node2))
+      throw new IllegalArgumentException("En av platserna saknas");
 
     for (Edge<T> edge : cities.get(node1)) {
       if (edge.getDestination().equals(node2)) {
@@ -69,7 +70,8 @@ public class ListGraph<T> implements Graph<T> {
 
   @Override
   public void disconnect(T node1, T node2) {
-    if (!cities.containsKey(node1) || !cities.containsKey(node2)) throw new IllegalArgumentException("En av platserna saknas");
+    if (!cities.containsKey(node1) || !cities.containsKey(node2))
+      throw new IllegalArgumentException("En av platserna saknas");
 
     Edge<T> edge1 = getEdgeBetween(node1, node2);
     Edge<T> edge2 = getEdgeBetween(node2, node1);
@@ -121,10 +123,10 @@ public class ListGraph<T> implements Graph<T> {
       }
 
     }
-
+  }
 
     @Override
-  public List<Edge<T>> getPath(T node1, T node2) {
+    public List<Edge<T>> getPath (T node1, T node2){
       if (!cities.containsKey(node1) || !cities.containsKey(node2)) {
         throw new NoSuchElementException("En eller båda noderna saknas");
       }
@@ -139,7 +141,7 @@ public class ListGraph<T> implements Graph<T> {
 
         for (Edge<T> edge : cities.get(current)) {
           T neighbor = edge.getDestination();
-          if(!cameFrom.containsKey(neighbor)) {
+          if (!cameFrom.containsKey(neighbor)) {
             cameFrom.put(neighbor, current);
             queue.add(neighbor);
           }
@@ -151,7 +153,7 @@ public class ListGraph<T> implements Graph<T> {
       List<Edge<T>> path = new LinkedList<>();
       T current = node2;
 
-      while(current != null && !current.equals(node1)) {
+      while (current != null && !current.equals(node1)) {
         T previous = cameFrom.get(current);
         Edge<T> edge = getEdgeBetween(previous, current);
         path.add(0, edge);
@@ -159,5 +161,5 @@ public class ListGraph<T> implements Graph<T> {
       }
       return path;
 
+    }
   }
-}
