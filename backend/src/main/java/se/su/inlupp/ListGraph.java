@@ -87,7 +87,7 @@ public class ListGraph<T> implements Graph<T> {
     if (!cities.containsKey(node)) throw new NoSuchElementException("Platsen saknas");
 
     for (Edge<T> edge : new HashSet<>(cities.get(node)) {
-       Tjena tjena
+       bla bla bla bla;
 
     }
 
@@ -102,4 +102,4 @@ public class ListGraph<T> implements Graph<T> {
   public List<Edge<T>> getPath(T from, T to) {
     throw new UnsupportedOperationException("Unimplemented method 'getPath'");
   }
-}
+} hej halllå
