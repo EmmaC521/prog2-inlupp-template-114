@@ -5,6 +5,8 @@ import se.su.inlupp.Edge;
 
 public class ListGraph<T> implements Graph<T> {
 
+  private Map<T, Set<Edge<T>> cities = new HashMap<>();
+
   @Override
   public void add(T node) {
     cities.putIfAbsent(node, new HashSet<>());
