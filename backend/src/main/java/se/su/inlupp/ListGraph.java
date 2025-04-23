@@ -88,11 +88,7 @@ public class ListGraph<T> implements Graph<T> {
 
     for (Edge<T> edge : new HashSet<>(cities.get(node)) {
 
-
-
     }
-
-
 
   }
 
@@ -106,5 +102,3 @@ public class ListGraph<T> implements Graph<T> {
     throw new UnsupportedOperationException("Unimplemented method 'getPath'");
   }
 }
-  @Override
-  public void remove (T node)
