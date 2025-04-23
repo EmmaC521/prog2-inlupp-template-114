@@ -98,10 +98,32 @@ public class ListGraph<T> implements Graph<T> {
 
   @Override
   public boolean pathExists(T from, T to) {
-    throw new UnsupportedOperationException("Unimplemented method 'pathExists'");
-  }
+    if (!cities.containsKey(from) || !cities.containsKey(to)) {
+      throw new IllegalArgumentException("En eller båda noderna saknas");
+    }
 
-  @Override
+    Set<T> visited = new HashSet<>();
+    Queue<T> queue = new LinkedList<>();
+    queue.add(from);
+    visited.add(from);
+
+    while (!queue.isEmpty()) {
+      T current = queue.poll();
+      if (current.equals(to)) {
+        return true;
+      }
+      for (Edge<T> edge : cities.get(current)) {
+        T neighbor = edge.getDestination();
+        if (!visited.contains(edge.getDestination())) {
+          visited.add(neighbor);
+          queue.add(neighbor);
+        }
+      }
+
+    }
+
+
+    @Override
   public List<Edge<T>> getPath(T from, T to) {
     throw new UnsupportedOperationException("Unimplemented method 'getPath'");
   }
