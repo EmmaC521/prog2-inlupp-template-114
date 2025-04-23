@@ -129,6 +129,7 @@ public class ListGraph<T> implements Graph<T> {
     }
     return false;
   }
+
   @Override
     public List<Edge<T>> getPath (T node1, T node2){
       if (!cities.containsKey(node1) || !cities.containsKey(node2)) {
@@ -166,4 +167,24 @@ public class ListGraph<T> implements Graph<T> {
       return path;
 
     }
+
+  @Override
+  public String toString() {
+    StringBuilder sb = new StringBuilder();
+
+    // Lägg till noderna
+    for (T node : cities.keySet()) {
+      sb.append(node).append("\n");
+    }
+
+    // Lägg till alla kanter
+    for (T from : cities.keySet()) {
+      for (Edge<T> edge : cities.get(from)) {
+        sb.append(edge.toString()).append("\n");
+      }
+    }
+
+    return sb.toString();
   }
+}
+
