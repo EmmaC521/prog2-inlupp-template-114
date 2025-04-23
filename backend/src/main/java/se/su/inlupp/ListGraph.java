@@ -5,8 +5,6 @@ import se.su.inlupp.Edge;
 
 public class ListGraph<T> implements Graph<T> {
 
-  9808
-
   @Override
   public void add(T node) {
     cities.putIfAbsent(node, new HashSet<>());
@@ -124,8 +122,7 @@ public class ListGraph<T> implements Graph<T> {
 
     }
   }
-
-    @Override
+  @Override
     public List<Edge<T>> getPath (T node1, T node2){
       if (!cities.containsKey(node1) || !cities.containsKey(node2)) {
         throw new NoSuchElementException("En eller båda noderna saknas");
