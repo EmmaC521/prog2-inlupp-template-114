@@ -105,7 +105,7 @@ public class ListGraph<T> implements Graph<T> {
   @Override
   public boolean pathExists(T from, T to) {
     if (!cities.containsKey(from) || !cities.containsKey(to)) {
-      throw new IllegalArgumentException("En eller båda noderna saknas");
+      return false;
     }
 
     Set<T> visited = new HashSet<>();
