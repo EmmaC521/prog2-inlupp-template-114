@@ -102,4 +102,4 @@ public class ListGraph<T> implements Graph<T> {
   public List<Edge<T>> getPath(T from, T to) {
     throw new UnsupportedOperationException("Unimplemented method 'getPath'");
   }
-} hej
+}
