@@ -14,14 +14,18 @@ public class ListGraph<T> implements Graph<T> {
 
   @Override
   public void connect(T node1, T node2, String name, int weight) {
-    add(node1);
-    add(node2);
+    if (!cities.containsKey(node1) || !cities.containsKey(node2)) {
+      throw new NoSuchElementException("En eller båda platserna saknas");
+    }
 
-    Set<Edge<T>> fromCities = cities.get(node1);
-    Set<Edge<T>> toCities = cities.get(node2);
+    // Kontrollera om kant redan finns
+    if (getEdgeBetween(node1, node2) != null) {
+      throw new IllegalStateException("Kanten finns redan");
+    }
 
-    fromCities.add(new ListEdge(node1, name, weight));
-    toCities.add(new ListEdge(node2, name, weight));
+    // Lägg till två kanter – grafen är oriktad
+    cities.get(node1).add(new ListEdge<>(node2, name, weight));
+    cities.get(node2).add(new ListEdge<>(node1, name, weight));
   }
 
   @Override
@@ -58,7 +62,7 @@ public class ListGraph<T> implements Graph<T> {
   @Override
   public Edge<T> getEdgeBetween(T node1, T node2) {
     if (!cities.containsKey(node1) || !cities.containsKey(node2))
-      throw new IllegalArgumentException("En av platserna saknas");
+      throw new NoSuchElementException("En av platserna saknas");
 
     for (Edge<T> edge : cities.get(node1)) {
       if (edge.getDestination().equals(node2)) {
