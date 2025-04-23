@@ -86,11 +86,14 @@ public class ListGraph<T> implements Graph<T> {
   public void remove(T node) {
     if (!cities.containsKey(node)) throw new NoSuchElementException("Platsen saknas");
 
-    for (Edge<T> edge : new HashSet<>(cities.get(node)) {
-       Kod skrivs här;
+    Set<Edge> edges = new HashSet<>(cities.get(node));
 
+    for (Edge<T> edge : edges) {
+      T neighbor = edge.getDestination();
+      disconnect(node, neighbor);
     }
 
+    cities.remove(node);
   }
 
   @Override
