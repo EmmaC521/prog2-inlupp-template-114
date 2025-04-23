@@ -87,7 +87,7 @@ public class ListGraph<T> implements Graph<T> {
     if (!cities.containsKey(node)) throw new NoSuchElementException("Platsen saknas");
 
     for (Edge<T> edge : new HashSet<>(cities.get(node)) {
-       bla bla bla bla;
+       Kod skrivs här;
 
     }
 
