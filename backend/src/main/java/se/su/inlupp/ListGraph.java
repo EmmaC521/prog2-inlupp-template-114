@@ -1,7 +1,7 @@
 package se.su.inlupp;
 
 import java.util.*;
-import se.su.inlupp.Edge;
+
 
 public class ListGraph<T> implements Graph<T> {
 
