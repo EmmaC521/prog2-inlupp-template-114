@@ -5,7 +5,7 @@ import se.su.inlupp.Edge;
 
 public class ListGraph<T> implements Graph<T> {
 
-  private Map<T, Set<Edge>> cities = new HashMap<>();
+  9808
 
   @Override
   public void add(T node) {
