@@ -124,7 +124,40 @@ public class ListGraph<T> implements Graph<T> {
 
 
     @Override
-  public List<Edge<T>> getPath(T from, T to) {
-    throw new UnsupportedOperationException("Unimplemented method 'getPath'");
+  public List<Edge<T>> getPath(T node1, T node2) {
+      if (!cities.containsKey(node1) || !cities.containsKey(node2)) {
+        throw new NoSuchElementException("En eller båda noderna saknas");
+      }
+      Map<T, T> cameFrom = new HashMap<>();
+      cameFrom.put(node1, null);
+
+      Queue<T> queue = new LinkedList<>();
+      queue.add(node1);
+
+      while (!queue.isEmpty()) {
+        T current = queue.poll();
+
+        for (Edge<T> edge : cities.get(current)) {
+          T neighbor = edge.getDestination();
+          if(!cameFrom.containsKey(neighbor)) {
+            cameFrom.put(neighbor, current);
+            queue.add(neighbor);
+          }
+        }
+      }
+      if (!cameFrom.containsKey(node2)) {
+        return null;
+      }
+      List<Edge<T>> path = new LinkedList<>();
+      T current = node2;
+
+      while(current != null && !current.equals(node1)) {
+        T previous = cameFrom.get(current);
+        Edge<T> edge = getEdgeBetween(previous, current);
+        path.add(0, edge);
+        current = previous;
+      }
+      return path;
+
   }
-} hej halllå
+}
