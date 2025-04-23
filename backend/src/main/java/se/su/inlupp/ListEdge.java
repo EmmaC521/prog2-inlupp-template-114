@@ -29,11 +29,13 @@ public class ListEdge<T> implements Edge<T> {
     }
 
     @Override
-    public String getName() {
-        return name;
-    }
-
     public String toString() {
-        return "till " + destination + " med " + name + " tar " + weight;
+        StringBuilder sb = new StringBuilder();
+        for (T from : cities.keySet()) {
+            for (Edge<T> edge : cities.get(from)) {
+                sb.append(edge.toString()).append("\n");
+            }
+        }
+        return sb.toString();
     }
 }
