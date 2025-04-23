@@ -17,8 +17,8 @@ public class ListGraph<T> implements Graph<T> {
     add(node1);
     add(node2);
 
-    Set<Edge> fromCities = cities.get(node1);
-    Set<Edge> toCities = cities.get(node2);
+    Set<Edge<T>> fromCities = cities.get(node1);
+    Set<Edge<T>> toCities = cities.get(node2);
 
     fromCities.add(new ListEdge(node1, name, weight));
     toCities.add(new ListEdge(node2, name, weight));
