@@ -54,7 +54,7 @@ public class ListGraph<T> implements Graph<T> {
 
   @Override
   public Collection<Edge<T>> getEdgesFrom(T node) {
-    if (!cities.containsKey(node)) throw new IllegalArgumentException("Platsen saknas");
+    if (!cities.containsKey(node)) throw new NoSuchElementException("Platsen saknas");
 
     return new HashSet<>(cities.get(node));
   }
@@ -75,7 +75,7 @@ public class ListGraph<T> implements Graph<T> {
   @Override
   public void disconnect(T node1, T node2) {
     if (!cities.containsKey(node1) || !cities.containsKey(node2))
-      throw new IllegalArgumentException("En av platserna saknas");
+      throw new NoSuchElementException("En av platserna saknas");
 
     Edge<T> edge1 = getEdgeBetween(node1, node2);
     Edge<T> edge2 = getEdgeBetween(node2, node1);

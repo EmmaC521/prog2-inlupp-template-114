@@ -34,6 +34,6 @@ public class ListEdge<T> implements Edge<T> {
     }
 
     public String toString() {
-        return "Destination: " + destination + " Namn: " + name + " Vikt: " + weight;
+        return "till " + destination + " med " + name + " tar " + weight;
     }
 }
