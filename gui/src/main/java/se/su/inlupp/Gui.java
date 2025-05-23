@@ -58,7 +58,7 @@ public class Gui extends Application {
             newConnectionButton, changeConnectionButton);
     buttonsPane.setAlignment(Pos.CENTER);
 
-    //Lägger ihop meny, kartaa och knappar i en vertikal layout
+    //Lägger ihop meny, karta och knappar i en vertikal layout
     VBox layout = new VBox(menuBar, mapView, buttonsPane);
     layout.setSpacing(10);
 
@@ -70,7 +70,7 @@ public class Gui extends Application {
 
     //Kopplar menyvalet "New map" till metoden handleNewMap
     newMapItem.setOnAction(e -> handleNewMap(stage));
-    //Stänger fönstret när "Exit" väljs"
+    //Stänger fönstret när "Exit" väljs
     exitItem.setOnAction(e -> stage.close());
   }
   //Inaktiverar alla knappar
@@ -91,8 +91,8 @@ public class Gui extends Application {
   }
   //Metod som körs när användaren väljer "New Map" i menyn
   private void handleNewMap(Stage stage) {
-    FileChooser fileChooser = new FileChooser(); //Öppnar filväljare
-    fileChooser.setTitle("Open Map Image"); //Titel i vilväljare
+    FileChooser fileChooser = new FileChooser(); //Öppnar filväljaren
+    fileChooser.setTitle("Open Map Image"); //Titel i filväljaren
     fileChooser.getExtensionFilters().add(
             new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg")
     );
@@ -101,10 +101,10 @@ public class Gui extends Application {
       //Laddar bilden och den valda filen
       Image image = new Image(file.toURI().toString());
       mapView.setImage(image); //Visar bilden i gränssnittet
-      mapView.setPreserveRatio(true); //Bevarar bildns proportiner
+      mapView.setPreserveRatio(true); //Bevarar bildens proportioner
       mapView.setFitWidth(image.getWidth()); //Sätter bildens bredd
       mapView.setFitHeight(image.getHeight()); //Sätter bildens höjd
-      enableAllButtons(); // Aktivera knapparna efter bildval så att användaren kan fortsääta
+      enableAllButtons(); // Aktivera knapparna efter bildval så att användaren kan fortsätta
     }
   }
 
