@@ -14,6 +14,15 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import javafx.scene.layout.StackPane;
+import javafx.scene.control.TextInputDialog;
+import javafx.scene.Cursor;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 import java.io.File;
 
@@ -28,6 +37,8 @@ public class Gui extends Application {
 
   //Bildvisare som används för att visa kartan
   private final ImageView mapView = new ImageView();
+  // Lista för att hålla koll på alla platser som läggs till på kartan
+  private final List<Location> locations = new ArrayList<>();
 
   @Override
   public void start(Stage stage) {
@@ -58,8 +69,10 @@ public class Gui extends Application {
             newConnectionButton, changeConnectionButton);
     buttonsPane.setAlignment(Pos.CENTER);
 
-    //Lägger ihop meny, karta och knappar i en vertikal layout
-    VBox layout = new VBox(menuBar, mapView, buttonsPane);
+    //Lägger ihop meny, karta och knappar i en vertikal layout,
+    // Ändrat layouten till StackPane så att vi kan lägga platsmarkörer ovanpå kartan
+    StackPane mapLayer = new StackPane(mapView);
+    VBox layout = new VBox(menuBar, mapLayer, buttonsPane);
     layout.setSpacing(10);
 
     //Skapar scenen
@@ -72,6 +85,8 @@ public class Gui extends Application {
     newMapItem.setOnAction(e -> handleNewMap(stage));
     //Stänger fönstret när "Exit" väljs
     exitItem.setOnAction(e -> stage.close());
+    //  När "New Place" klickas, kör metoden nedan
+    newPlaceButton.setOnAction(e -> handleNewPlace());
   }
   //Inaktiverar alla knappar
   private void disableAllButtons() {
@@ -107,9 +122,72 @@ public class Gui extends Application {
       enableAllButtons(); // Aktivera knapparna efter bildval så att användaren kan fortsätta
     }
   }
+  private void handleNewPlace() {
+    newPlaceButton.setDisable(true);
+    mapView.setCursor(Cursor.CROSSHAIR);
+
+    mapView.setOnMouseClicked(event -> {
+      mapView.setCursor(Cursor.DEFAULT);
+      newPlaceButton.setDisable(false);
+      mapView.setOnMouseClicked(null); // Används bara en gång
+
+      TextInputDialog dialog = new TextInputDialog();
+      dialog.setTitle("New Place");
+      dialog.setHeaderText("Enter name for the new place:");
+      Optional<String> result = dialog.showAndWait();
+
+      if (result.isPresent()) {
+        String name = result.get().trim();
+        if (!name.isEmpty()) {
+          double x = event.getX();
+          double y = event.getY();
+
+          Location loc = new Location(name, x, y);
+          locations.add(loc);
+
+          //  Lägg till platsen ovanpå kartbilden
+          ((StackPane) mapView.getParent()).getChildren().add(loc);
+
+          // Gör platsen klickbar för att markera/avmarkera
+          loc.setOnMouseClicked(ev -> {
+            ev.consume();
+            loc.toggleSelection();
+          });
+        }
+      }
+    });
+  }
 
   //Startpunkt för programmet
   public static void main(String[] args) {
     launch(args); //Startar JavaFX-applikationen
   }
 }
+
+//Klass som representerar en plats på kartan med färg och markeringsstatus
+class Location extends Circle {
+  private final String name;
+  private boolean selected = false;
+
+  public Location(String name, double x, double y) {
+    super(x, y, 6); // x, y-position och radie
+    this.name = name;
+    setFill(Color.BLUE); // Blå = ej vald
+    setStroke(Color.BLACK); // Svart kant
+    setStrokeWidth(1);
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  public void toggleSelection() {
+    selected = !selected;
+    setFill(selected ? Color.RED : Color.BLUE); // Röd = vald
+  }
+
+  public boolean isSelected() {
+    return selected;
+  }
+}
+
