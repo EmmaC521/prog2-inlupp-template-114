@@ -76,7 +76,7 @@ public class Gui extends Application {
     layout.setSpacing(10);
 
     //Skapar scenen
-    Scene scene = new Scene(layout, 700, 800);
+    Scene scene = new Scene(layout, 700, 850);
     stage.setScene(scene);
     stage.setTitle("PathFinder");
     stage.show();
