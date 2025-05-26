@@ -118,7 +118,7 @@ public class Gui extends Application {
       mapView.setImage(image); //Visar bilden i gränssnittet
       mapView.setPreserveRatio(true); //Bevarar bildens proportioner
       mapView.setFitWidth(650); //Sätter bildens bredd
-      mapView.setFitHeight(750); //Sätter bildens höjd
+      mapView.setFitHeight(650); //Sätter bildens höjd
       enableAllButtons(); // Aktivera knapparna efter bildval så att användaren kan fortsätta
     }
   }
