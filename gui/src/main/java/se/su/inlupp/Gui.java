@@ -109,7 +109,7 @@ public class Gui extends Application {
     FileChooser fileChooser = new FileChooser(); //Öppnar filväljaren
     fileChooser.setTitle("Open Map Image"); //Titel i filväljaren
     fileChooser.getExtensionFilters().add(
-            new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg")
+            new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg", "*.gif")
     );
     File file = fileChooser.showOpenDialog(stage); //Visar dialog och väntar på filval
     if (file != null) {
