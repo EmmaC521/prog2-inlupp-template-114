@@ -19,6 +19,13 @@ import javafx.scene.control.TextInputDialog;
 import javafx.scene.Cursor;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
+import se.su.inlupp.Graph;
+import se.su.inlupp.ListGraph;
+import se.su.inlupp.Edge;
+
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
+import javafx.scene.shape.Line;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,6 +46,7 @@ public class Gui extends Application {
   private final ImageView mapView = new ImageView();
   // Lista för att hålla koll på alla platser som läggs till på kartan
   private final List<Location> locations = new ArrayList<>();
+  private final Graph<Location> graph = new ListGraph<>();
 
   @Override
   public void start(Stage stage) {
@@ -87,6 +95,9 @@ public class Gui extends Application {
     exitItem.setOnAction(e -> stage.close());
     //  När "New Place" klickas, kör metoden nedan
     newPlaceButton.setOnAction(e -> handleNewPlace());
+    newConnectionButton.setOnAction(e -> handleNewConnection());
+    showConnectionButton.setOnAction(e -> handleShowConnection());
+
   }
   //Inaktiverar alla knappar
   private void disableAllButtons() {
@@ -157,6 +168,91 @@ public class Gui extends Application {
       }
     });
   }
+
+  private void handleNewConnection() {
+    List<Location> selected = locations.stream()
+            .filter(Location::isSelected)
+            .toList();
+
+    if (selected.size() != 2) {
+      showError("Select exactly TWO places to connect.");
+      return;
+    }
+
+    Location from = selected.get(0);
+    Location to = selected.get(1);
+
+    TextInputDialog dialog = new TextInputDialog("1");
+    dialog.setTitle("Connection Weight");
+    dialog.setHeaderText("Enter weight for the connection:");
+    Optional<String> result = dialog.showAndWait();
+
+    if (result.isPresent()) {
+      try {
+        int weight = Integer.parseInt(result.get().trim());
+
+        graph.connect(from, to, "road", weight);
+
+        Line line = new Line(from.getCenterX(), from.getCenterY(),
+                to.getCenterX(), to.getCenterY());
+        line.setStroke(Color.GRAY);
+        ((StackPane) mapView.getParent()).getChildren().add(0, line);
+
+        from.toggleSelection();
+        to.toggleSelection();
+
+      } catch (NumberFormatException e) {
+        showError("Invalid number. Please enter an integer.");
+      }
+    }
+  }
+
+  private void handleShowConnection() {
+    List<Location> selected = locations.stream()
+            .filter(Location::isSelected)
+            .toList();
+
+    if (selected.size() != 2) {
+      showError("Select exactly TWO places to check connection.");
+      return;
+    }
+
+    Location from = selected.get(0);
+    Location to = selected.get(1);
+
+    if (graph.pathExists(from, to)) {
+      Edge<Location> edge = graph.getEdgeBetween(from, to);
+
+      Alert alert = new Alert(Alert.AlertType.INFORMATION);
+      alert.setTitle("Connection Info");
+      alert.setHeaderText("There is a connection:");
+      alert.setContentText(from.getName() + " ↔ " + to.getName()
+              + "\nWeight: " + edge.getWeight()
+              + "\nType: " + edge.getName());
+      alert.showAndWait();
+    } else {
+      Alert alert = new Alert(Alert.AlertType.INFORMATION);
+      alert.setTitle("No Connection");
+      alert.setHeaderText("No connection exists between:");
+      alert.setContentText(from.getName() + " ↔ " + to.getName());
+      alert.showAndWait();
+    }
+
+    // Avmarkera båda efter visning
+    selected.forEach(Location::toggleSelection);
+  }
+
+
+
+  private void showError(String msg) {
+    Alert alert = new Alert(Alert.AlertType.ERROR);
+    alert.setTitle("Error");
+    alert.setHeaderText(msg);
+    alert.showAndWait();
+  }
+
+
+
 
   //Startpunkt för programmet
   public static void main(String[] args) {
