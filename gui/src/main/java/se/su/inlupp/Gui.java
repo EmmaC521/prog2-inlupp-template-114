@@ -26,6 +26,8 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.shape.Line;
 
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -98,6 +100,8 @@ public class Gui extends Application {
     newMapItem.setOnAction(e -> handleNewMap(stage));
     //Stänger fönstret när "Exit" väljs
     exitItem.setOnAction(e -> stage.close());
+    //openItem.setOnAction(e-> handleOpen(stage)); //Eventhanterare för menyval open
+    saveItem.setOnAction(e-> handleSave(stage)); //Eventhanterare för menyval save ev flytta ned
     //  När "New Place" klickas, kör metoden nedan
     newPlaceButton.setOnAction(e -> handleNewPlace());
     newConnectionButton.setOnAction(e -> handleNewConnection());
@@ -120,6 +124,48 @@ public class Gui extends Application {
     newConnectionButton.setDisable(false);
     changeConnectionButton.setDisable(false);
   }
+
+  //Metod för menyvalet "Save"
+  private void handleSave(Stage stage) {
+    if (mapView.getImage() == null) {
+      showError("No map loaded. Cannot save.");
+      return;
+    }
+    FileChooser fileChooser = new FileChooser();
+    fileChooser.setTitle("Save Graph File");
+    fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Graph files", "*.graph"));
+    File file = fileChooser.showSaveDialog(stage);
+    if (file == null) return;
+
+    try (PrintWriter writer = new PrintWriter(file)) {
+      writer.println(mapView.getImage().getUrl());
+
+      StringBuilder nodeLine = new StringBuilder();
+      for(Location loc : locations) {
+        if (nodeLine.length() > 0)  nodeLine.append(";");
+        nodeLine.append(loc.getName()).append(";")
+                .append(loc.getCenterX()).append(";")
+                .append(loc.getCenterY());
+      }
+      writer.println(nodeLine);
+
+
+      for (Location from : locations) {
+        for (Edge<Location> edge : graph.getEdgesFrom(from)) {
+          Location to = edge.getDestination();
+          if (locations.indexOf(from)<  locations.indexOf(to)) {
+            writer.println(from.getName() + ";" + to.getName() + ";" +
+                    edge.getName() + ";" + edge.getWeight());
+          }
+        }
+      }
+      //hasUnsavedChanges = false; //Kommer att använas senare
+    } catch (IOException e) {
+      showError("Could not save" + e.getMessage());
+    }
+
+  }
+
   //Metod som körs när användaren väljer "New Map" i menyn
   private void handleNewMap(Stage stage) {
     FileChooser fileChooser = new FileChooser(); //Öppnar filväljaren
