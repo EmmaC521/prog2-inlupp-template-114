@@ -16,7 +16,7 @@ import javafx.stage.Stage;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.Cursor;
 import javafx.scene.paint.Color;
-//import javafx.scene.shape.Circle;
+//import javafx.scene.shape.Circle; //används inte nu
 //import se.su.inlupp.Graph;
 //import se.su.inlupp.ListGraph;
 //import se.su.inlupp.Edge;
