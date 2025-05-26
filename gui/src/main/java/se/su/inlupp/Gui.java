@@ -16,14 +16,14 @@ import javafx.stage.Stage;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.Cursor;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Circle;
-import se.su.inlupp.Graph;
-import se.su.inlupp.ListGraph;
-import se.su.inlupp.Edge;
+//import javafx.scene.shape.Circle;
+//import se.su.inlupp.Graph;
+//import se.su.inlupp.ListGraph;
+//import se.su.inlupp.Edge;
 import javafx.application.Platform;
 
 import javafx.scene.control.Alert;
-import javafx.scene.control.Alert.AlertType;
+//import javafx.scene.control.Alert.AlertType;
 import javafx.scene.shape.Line;
 
 import java.io.IOException;
@@ -142,7 +142,7 @@ public class Gui extends Application {
 
       StringBuilder nodeLine = new StringBuilder();
       for(Location loc : locations) {
-        if (nodeLine.length() > 0)  nodeLine.append(";");
+        if (!nodeLine.isEmpty())  nodeLine.append(";");
         nodeLine.append(loc.getName()).append(";")
                 .append(loc.getCenterX()).append(";")
                 .append(loc.getCenterY());
