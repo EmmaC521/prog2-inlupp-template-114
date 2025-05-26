@@ -1,42 +1,101 @@
 package se.su.inlupp;
 
+
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 
-// Klass som representerar en plats på kartan med färg och markeringsstatus
+
 public class Location extends Circle {
     private final String name;
+    private final double x, y;
     private boolean selected = false;
 
+
     public Location(String name, double x, double y) {
-        super(x, y, 6); // x, y-position och radie
+        super(8); // Radie på 8 pixlar
         this.name = name;
-        setFill(Color.BLUE); // Blå = ej vald
-        setStroke(Color.BLACK); // Svart kant
+        this.x = x;
+        this.y = y;
+
+
+        // Positionera cirkeln på rätt plats
+        setTranslateX(x);
+        setTranslateY(y);
+
+
+        // Sätt färg till blå som standard
+        setFill(Color.BLUE);
+        setStroke(Color.BLACK);
         setStrokeWidth(1);
+
+
+        // Gör cirkeln klickbar - viktig del!
+        setOnMouseClicked(event -> {
+            event.consume(); // Stoppa händelsen från att bubla upp
+            toggleSelection();
+        });
+
+
+        // Lägg till hover-effekt för bättre användarupplevelse
+        setOnMouseEntered(event -> {
+            if (!selected) {
+                setFill(Color.LIGHTBLUE);
+            }
+        });
+
+
+        setOnMouseExited(event -> {
+            if (!selected) {
+                setFill(Color.BLUE);
+            }
+        });
     }
 
-    public String getName() {
-        return name;
-    }
 
     public void toggleSelection() {
         selected = !selected;
-        setFill(selected ? Color.RED : Color.BLUE); // Röd = vald
+        if (selected) {
+            setFill(Color.RED);
+        } else {
+            setFill(Color.BLUE);
+        }
     }
+
 
     public boolean isSelected() {
         return selected;
     }
 
-    // ✅ Dessa två metoder SKA ligga inuti klassen
+
+    public String getName() {
+        return name;
+    }
+
+
+    public double getX() {
+        return x;
+    }
+
+
+    public double getY() {
+        return y;
+    }
+
+
+    @Override
+    public String toString() {
+        return name;
+    }
+
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
         if (obj == null || getClass() != obj.getClass()) return false;
-        Location other = (Location) obj;
-        return name.equals(other.name);
+        Location location = (Location) obj;
+        return name.equals(location.name);
     }
+
 
     @Override
     public int hashCode() {

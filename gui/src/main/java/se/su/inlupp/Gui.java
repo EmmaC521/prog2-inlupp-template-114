@@ -21,6 +21,10 @@ import javafx.scene.paint.Color;
 //import se.su.inlupp.ListGraph;
 //import se.su.inlupp.Edge;
 import javafx.application.Platform;
+import java.util.Queue;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.HashMap;
 
 import javafx.scene.control.Alert;
 //import javafx.scene.control.Alert.AlertType;
@@ -53,7 +57,7 @@ public class Gui extends Application {
 
   @Override
   public void start(Stage stage) {
-     //Kommer att användas senare
+    //Kommer att användas senare
 
     //Menyn "file"
     Menu fileMenu = new Menu("File");
@@ -103,9 +107,11 @@ public class Gui extends Application {
     //openItem.setOnAction(e-> handleOpen(stage)); //Eventhanterare för menyval open
     saveItem.setOnAction(e-> handleSave(stage)); //Eventhanterare för menyval save ev flytta ned
     //  När "New Place" klickas, kör metoden nedan
+    findPathButton.setOnAction(e -> handleFindPath());
     newPlaceButton.setOnAction(e -> handleNewPlace());
     newConnectionButton.setOnAction(e -> handleNewConnection());
     showConnectionButton.setOnAction(e -> handleShowConnection());
+
 
   }
   //Inaktiverar alla knappar
@@ -311,6 +317,81 @@ public class Gui extends Application {
 
     // Avmarkera båda efter visning
     selected.forEach(Location::toggleSelection);
+  }
+
+  private void handleFindPath() {
+    // Välj startplats
+    List<Location> selectedStart = locations.stream()
+            .filter(Location::isSelected)
+            .toList();
+
+    if (selectedStart.size() != 2) {
+      showError("Select exactly TWO places to find path.");
+      return;
+    }
+
+    Location start = selectedStart.get(0);
+    Location end = selectedStart.get(1);
+
+    List<Location> path = findPath(start, end);
+
+    if (path == null || path.isEmpty()) {
+      showError("No path found between selected locations.");
+      return;
+    }
+
+    // Markera eller visa vägen på något sätt
+    StringBuilder pathStr = new StringBuilder();
+    for (Location loc : path) {
+      if (pathStr.length() > 0) pathStr.append(" -> ");
+      pathStr.append(loc.getName());
+    }
+
+    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+    alert.setTitle("Found Path");
+    alert.setHeaderText("Path from " + start.getName() + " to " + end.getName());
+    alert.setContentText(pathStr.toString());
+    alert.showAndWait();
+
+    // Avmarkera platser efteråt
+    selectedStart.forEach(Location::toggleSelection);
+  }
+
+  private List<Location> findPath(Location start, Location end) {
+    if (start.equals(end)) {
+      return List.of(start);
+    }
+
+    Queue<Location> queue = new LinkedList<>();
+    Map<Location, Location> cameFrom = new HashMap<>();
+
+    queue.add(start);
+    cameFrom.put(start, null);
+
+    while (!queue.isEmpty()) {
+      Location current = queue.poll();
+
+      if (current.equals(end)) {
+        // Bygg vägen baklänges
+        List<Location> path = new LinkedList<>();
+        for (Location loc = end; loc != null; loc = cameFrom.get(loc)) {
+          path.add(0, loc);
+        }
+        return path;
+      }
+
+      // Utforska grannarna
+      for (Edge<Location> edge : graph.getEdgesFrom(current)) {
+        Location neighbor = edge.getDestination();
+        if (!cameFrom.containsKey(neighbor)) {
+          cameFrom.put(neighbor, current);
+          queue.add(neighbor);
+        }
+      }
+    }
+
+    // Ingen väg hittades
+    return null;
   }
 
 
