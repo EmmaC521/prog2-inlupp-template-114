@@ -72,7 +72,7 @@ public class Gui extends Application {
     //Lägger ihop meny, karta och knappar i en vertikal layout,
     // Ändrat layouten till StackPane så att vi kan lägga platsmarkörer ovanpå kartan
     StackPane mapLayer = new StackPane(mapView);
-    VBox layout = new VBox(menuBar, mapLayer, buttonsPane);
+    VBox layout = new VBox(menuBar, buttonsPane, mapLayer);
     layout.setSpacing(10);
 
     //Skapar scenen
