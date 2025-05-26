@@ -8,13 +8,11 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
-import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import javafx.scene.layout.StackPane;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.Cursor;
 import javafx.scene.paint.Color;
@@ -22,6 +20,7 @@ import javafx.scene.shape.Circle;
 import se.su.inlupp.Graph;
 import se.su.inlupp.ListGraph;
 import se.su.inlupp.Edge;
+import javafx.application.Platform;
 
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
@@ -35,6 +34,7 @@ import java.io.File;
 
 public class Gui extends Application {
 
+
   //Skapar knappar för åtgärder
   private final Button findPathButton = new Button ("Find Path");
   private final Button showConnectionButton = new Button ("Show Connection");
@@ -47,10 +47,11 @@ public class Gui extends Application {
   // Lista för att hålla koll på alla platser som läggs till på kartan
   private final List<Location> locations = new ArrayList<>();
   private final Graph<Location> graph = new ListGraph<>();
+  private final Pane mapLayer = new Pane();
 
   @Override
   public void start(Stage stage) {
-    //Graph<String> graph = new ListGraph<>(); //Kommer att användas senare
+     //Kommer att användas senare
 
     //Menyn "file"
     Menu fileMenu = new Menu("File");
@@ -79,12 +80,16 @@ public class Gui extends Application {
 
     //Lägger ihop meny, karta och knappar i en vertikal layout,
     // Ändrat layouten till StackPane så att vi kan lägga platsmarkörer ovanpå kartan
-    StackPane mapLayer = new StackPane(mapView);
-    VBox layout = new VBox(menuBar, buttonsPane, mapLayer);
-    layout.setSpacing(10);
+    mapLayer.getChildren().add(mapView);
+    VBox topBox = new VBox(menuBar, buttonsPane);
+    topBox.setAlignment(Pos.CENTER);
+    topBox.setSpacing(10);
 
-    //Skapar scenen
-    Scene scene = new Scene(layout, 700, 850);
+    BorderPane root = new BorderPane();
+    root.setTop(topBox);
+    root.setCenter(mapLayer); // ← mapLayer (med bild) hamnar i mitten
+
+    Scene scene = new Scene(root, 700, 850);
     stage.setScene(scene);
     stage.setTitle("PathFinder");
     stage.show();
@@ -130,9 +135,28 @@ public class Gui extends Application {
       mapView.setPreserveRatio(true); //Bevarar bildens proportioner
       mapView.setFitWidth(650); //Sätter bildens bredd
       mapView.setFitHeight(700); //Sätter bildens höjd
-      enableAllButtons(); // Aktivera knapparna efter bildval så att användaren kan fortsätta
+
+      mapLayer.setPrefWidth(mapView.getFitWidth());
+      mapLayer.setPrefHeight(mapView.getFitHeight());
+
+      if (!mapLayer.getChildren().contains(mapView)) {
+        mapLayer.getChildren().add(mapView);
+      }
+
+      // Vänta på att bilden är helt laddad innan centrering
+      Platform.runLater(() -> {
+        mapView.setLayoutX((mapLayer.getWidth() - mapView.getBoundsInLocal().getWidth()) / 2);
+        mapView.setLayoutY((mapLayer.getHeight() - mapView.getBoundsInLocal().getHeight()) / 2);
+      });
+
+      enableAllButtons();// Aktivera knapparna efter bildval så att användaren kan fortsätta
     }
   }
+  private void centerImage() {
+    mapView.setLayoutX((mapLayer.getWidth() - mapView.getBoundsInLocal().getWidth()) / 2);
+    mapView.setLayoutY((mapLayer.getHeight() - mapView.getBoundsInLocal().getHeight()) / 2);
+  }
+
   private void handleNewPlace() {
     newPlaceButton.setDisable(true);
     mapView.setCursor(Cursor.CROSSHAIR);
@@ -150,14 +174,15 @@ public class Gui extends Application {
       if (result.isPresent()) {
         String name = result.get().trim();
         if (!name.isEmpty()) {
-          double x = event.getX();
-          double y = event.getY();
+          double x = event.getX() + mapView.getLayoutX();
+          double y = event.getY() + mapView.getLayoutY();
 
           Location loc = new Location(name, x, y);
           locations.add(loc);
+          graph.add(loc);
 
           //  Lägg till platsen ovanpå kartbilden
-          ((StackPane) mapView.getParent()).getChildren().add(loc);
+          ((Pane) mapView.getParent()).getChildren().add(loc);
 
           // Gör platsen klickbar för att markera/avmarkera
           loc.setOnMouseClicked(ev -> {
