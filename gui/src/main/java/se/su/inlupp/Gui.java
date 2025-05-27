@@ -1,7 +1,6 @@
 package se.su.inlupp;
 
 import javafx.application.Application;
-import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -9,7 +8,6 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
-import javafx.scene.image.WritableImage;
 import javafx.scene.layout.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -24,14 +22,12 @@ import javafx.scene.paint.Color;
 //import se.su.inlupp.Edge;
 import javafx.application.Platform;
 
-import java.awt.image.BufferedImage;
 import java.util.*;
 
 import javafx.scene.control.Alert;
 //import javafx.scene.control.Alert.AlertType;
 import javafx.scene.shape.Line;
-
-import javax.imageio.ImageIO;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 
@@ -53,12 +49,10 @@ public class Gui extends Application {
   private final List<Location> locations = new ArrayList<>();
   private final Graph<Location> graph = new ListGraph<>();
   private final Pane mapLayer = new Pane();
-  private Stage primaryStage;
 
   @Override
   public void start(Stage stage) {
-    this.primaryStage = stage;
-
+    //Kommer att användas senare
 
     //Menyn "file"
     Menu fileMenu = new Menu("File");
@@ -105,9 +99,11 @@ public class Gui extends Application {
     newMapItem.setOnAction(e -> handleNewMap(stage));
     //Stänger fönstret när "Exit" väljs
     exitItem.setOnAction(e -> stage.close());
-    openItem.setOnAction(e-> handleOpen(stage)); //Eventhanterare för menyval open
-    saveItem.setOnAction(e-> handleSave(stage)); //Eventhanterare för menyval save
-    saveImageItem.setOnAction(e-> handleSaveImage());
+    //openItem.setOnAction(e-> handleOpen(stage)); //Eventhanterare för menyval open
+    saveItem.setOnAction(e-> handleSave(stage)); //Eventhanterare för menyval save ev flytta ned
+
+    openItem.setOnAction(e -> handleOpen(stage));
+
     //  När "New Place" klickas, kör metoden nedan
     findPathButton.setOnAction(e -> handleFindPath());
     newPlaceButton.setOnAction(e -> handleNewPlace());
@@ -211,86 +207,6 @@ public class Gui extends Application {
     mapView.setLayoutY((mapLayer.getHeight() - mapView.getBoundsInLocal().getHeight()) / 2);
   }
 
-  private void handleOpen(Stage stage) {
-    FileChooser fileChooser = new FileChooser();
-    fileChooser.setTitle("Open Graph File");
-    fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Graph files", "*.graph"));
-    File file = fileChooser.showOpenDialog(stage);
-    if (file == null) return;
-
-    try (Scanner scanner = new Scanner(file)) {
-      //mapLayer.getChildren().clear();
-      //locations.clear();
-      //graph.clear();
-      if (!scanner.hasNextLine()) throw new IOException("File missing image line.");
-      String imageURL = scanner.nextLine();
-      Image image = new Image(imageURL);
-      mapView.setPreserveRatio(true);
-      mapView.setFitWidth(650);
-      mapView.setFitHeight(700);
-      mapLayer.setPrefWidth(mapView.getFitWidth());
-      mapLayer.setPrefHeight(mapView.getFitHeight());
-
-      if (!mapLayer.getChildren().contains(mapView)) {
-        mapLayer.getChildren().add(mapView);
-
-      }
-      if (!scanner.hasNextLine()) throw new IOException("File missing node line");
-      String nodeLine = scanner.nextLine();
-      String[] nodeParts = nodeLine.split(";");
-      for (int i = 0; i < nodeParts.length; i += 3) {
-        String name = nodeParts[i];
-        double x = Double.parseDouble(nodeParts[i + 1]);
-        double y = Double.parseDouble(nodeParts[i + 2]);
-
-        Location loc = new Location(name, x, y);
-        locations.add(loc);
-        graph.add(loc);
-        mapLayer.getChildren().add(loc);
-
-        loc.setOnMouseClicked(ev -> {
-          ev.consume();
-          loc.toggleSelection();
-        });
-      }
-
-      // 3. Läs in alla kanter
-      while (scanner.hasNextLine()) {
-        String line = scanner.nextLine();
-        String[] parts = line.split(";");
-        if (parts.length < 4) continue;
-
-        String fromName = parts[0];
-        String toName = parts[1];
-        String connName = parts[2];
-        int weight = Integer.parseInt(parts[3]);
-
-        Location from = findLocationByName(fromName);
-        Location to = findLocationByName(toName);
-        if (from != null && to != null) {
-          graph.connect(from, to, connName, weight);
-          Line edgeLine = new Line(from.getCenterX(), from.getCenterY(),
-                  to.getCenterX(), to.getCenterY());
-          edgeLine.setStroke(Color.GRAY);
-          mapLayer.getChildren().add(0, edgeLine);
-        }
-      }
-
-      enableAllButtons();
-
-    } catch (IOException | NumberFormatException e) {
-      showError("Could not open file: " + e.getMessage());
-    }
-
-  }
-  private Location findLocationByName(String name) {
-    for (Location loc : locations) {
-      if (loc.getName().equals(name)) return loc;
-    }
-    return null;
-  }
-
-
   private void handleNewPlace() {
     newPlaceButton.setDisable(true);
     mapView.setCursor(Cursor.CROSSHAIR);
@@ -326,19 +242,6 @@ public class Gui extends Application {
         }
       }
     });
-  }
-
-  private void handleSaveImage() {
-    WritableImage image = primaryStage.getScene().snapshot(null);
-    BufferedImage bufferedImage = SwingFXUtils.fromFXImage(image, null);
-    File outputFile = new File("capture.png");
-
-    try {
-      ImageIO.write(bufferedImage, "png", outputFile);
-      System.out.println("Bild sparad som capture.png");
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
   }
 
   private void handleNewConnection() {
@@ -487,6 +390,117 @@ public class Gui extends Application {
 
     // Ingen väg hittades
     return null;
+  }
+  private void handleOpen(Stage stage) {
+    FileChooser fileChooser = new FileChooser();
+    fileChooser.setTitle("Open Graph File");
+    fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Graph files", "*.graph"));
+    File file = fileChooser.showOpenDialog(stage);
+    if (file == null) return;
+
+    locations.clear();
+    mapLayer.getChildren().clear();
+    mapLayer.getChildren().add(mapView);
+
+    for (Location location : new ArrayList<>(graph.getNodes())) {
+      graph.remove(location);
+    }
+
+    try (Scanner scanner = new Scanner(file)) {
+      if(!scanner.hasNextLine()) return;
+      String[] placeData = scanner.nextLine().split(";");
+      String imageFileName = placeData[0].replace("file:", "").trim();
+      File imageFile = new File(file.getParentFile(), imageFileName);
+      Image image = new Image(imageFile.toURI().toString());
+      mapView.setImage(image);
+      mapView.setPreserveRatio(true);
+      mapView.setMouseTransparent(true);
+      mapView.setFitWidth(650);
+      mapView.setFitHeight(700);
+
+      mapLayer.setPrefWidth(mapView.getFitWidth());
+      mapLayer.setPrefHeight(mapView.getFitHeight());
+
+      Platform.runLater(() -> {
+        mapView.setLayoutX((mapLayer.getWidth() - mapView.getBoundsInLocal().getWidth()) / 2);
+        mapView.setLayoutY((mapLayer.getHeight() - mapView.getBoundsInLocal().getHeight()) / 2);
+
+        enableAllButtons();
+      });
+
+      for (int i = 1; i < placeData.length; i += 3) {
+        String name = placeData[i].trim();
+        double x = Double.parseDouble(placeData[i + 1].trim());
+        double y = Double.parseDouble(placeData[i + 2].trim());
+        Location location = new Location(name, 0, 0); // temporär
+        location.setLayoutX(x);
+        location.setLayoutY(y);
+
+        location.setOnMouseClicked(ev -> {
+          ev.consume();
+          location.toggleSelection();
+        });
+
+        locations.add(location);
+        graph.add(location);
+        mapLayer.getChildren().add(location);
+      }
+
+      List<String> edgeParts = new ArrayList<>();
+      while (scanner.hasNextLine()) {
+        String[] parts = scanner.nextLine().split(";");
+        for (String part : parts) {
+          edgeParts.add(part.trim());
+        }
+      }
+
+      for (int i = 0; i < edgeParts.size(); i += 4) {
+        String fromName = edgeParts.get(i);
+        String toName = edgeParts.get(i + 1);
+        String connName = edgeParts.get(i + 2);
+        int weight = Integer.parseInt(edgeParts.get(i + 3));
+
+        Location from = findLocationByName(fromName);
+        Location to = findLocationByName(toName);
+        if (from != null && to != null) {
+          try {
+            graph.connect(from, to, connName, weight);
+            drawConnection(from, to);
+          } catch (Exception e) {
+            System.err.println("Kunde inte koppla " + fromName + " - " + toName + ": " + e.getMessage());
+          }
+        }
+      }
+    } catch (FileNotFoundException e) {
+      showErrorDialog("Fel vid inläsning av filen: " + e.getMessage());
+      e.printStackTrace();
+    }
+  }
+
+  private Location findLocationByName(String name) {
+    for (Location loc : locations) {
+      if (loc.getName().equals(name)) return loc;
+    }
+    return null;
+  }
+
+  private void drawConnection(Location from, Location to) {
+    Line line = new Line();
+    line.setStartX(from.getTranslateX());
+    line.setStartY(from.getTranslateY());
+    line.setEndX(to.getTranslateX());
+    line.setEndY(to.getTranslateY());
+    line.setStroke(Color.BLACK);
+    line.setStrokeWidth(2);
+    mapLayer.getChildren().add(line);
+  }
+
+  private void showErrorDialog(String message) {
+    Alert alert = new Alert(Alert.AlertType.ERROR);
+    alert.setTitle("Fel");
+    alert.setHeaderText("Ett fel inträffade");
+    alert.setContentText(message);
+    alert.showAndWait();
   }
 
 
