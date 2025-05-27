@@ -21,9 +21,10 @@ import javafx.scene.paint.Color;
 //import se.su.inlupp.ListGraph;
 //import se.su.inlupp.Edge;
 import javafx.application.Platform;
-
-import java.io.FileNotFoundException;
-import java.util.*;
+import java.util.Queue;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.HashMap;
 
 import javafx.scene.control.Alert;
 //import javafx.scene.control.Alert.AlertType;
@@ -31,6 +32,9 @@ import javafx.scene.shape.Line;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 import java.io.File;
 
@@ -102,14 +106,11 @@ public class Gui extends Application {
     exitItem.setOnAction(e -> stage.close());
     //openItem.setOnAction(e-> handleOpen(stage)); //Eventhanterare för menyval open
     saveItem.setOnAction(e-> handleSave(stage)); //Eventhanterare för menyval save ev flytta ned
-
-    openItem.setOnAction(e -> handleOpen(stage));
     //  När "New Place" klickas, kör metoden nedan
     findPathButton.setOnAction(e -> handleFindPath());
     newPlaceButton.setOnAction(e -> handleNewPlace());
     newConnectionButton.setOnAction(e -> handleNewConnection());
     showConnectionButton.setOnAction(e -> handleShowConnection());
-
 
 
   }
@@ -170,120 +171,6 @@ public class Gui extends Application {
     }
 
   }
-
-  private void handleOpen(Stage stage) {
-    FileChooser fileChooser = new FileChooser();
-    fileChooser.setTitle("Open Graph File");
-    fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Graph files", "*.graph"));
-    File file = fileChooser.showOpenDialog(stage);
-    if (file == null) return;
-
-    locations.clear();
-    mapLayer.getChildren().clear();
-    mapLayer.getChildren().add(mapView);
-
-    for (Location location : new ArrayList<>(graph.getNodes())) {
-      graph.remove(location);
-    }
-
-    try (Scanner scanner = new Scanner(file)) {
-      if(!scanner.hasNextLine()) return;
-      String[] placeData = scanner.nextLine().split(";");
-      String imageFileName = placeData[0].replace("file:", "").trim();
-      File imageFile = new File(file.getParentFile(), imageFileName);
-      Image image = new Image(imageFile.toURI().toString());
-      mapView.setImage(image);
-      mapView.setPreserveRatio(true);
-      mapView.setMouseTransparent(true);
-      mapView.setFitWidth(650);
-      mapView.setFitHeight(700);
-
-      mapLayer.setPrefWidth(mapView.getFitWidth());
-      mapLayer.setPrefHeight(mapView.getFitHeight());
-
-      Platform.runLater(() -> {
-        mapView.setLayoutX((mapLayer.getWidth() - mapView.getBoundsInLocal().getWidth()) / 2);
-        mapView.setLayoutY((mapLayer.getHeight() - mapView.getBoundsInLocal().getHeight()) / 2);
-
-        enableAllButtons();
-      });
-
-      for (int i = 1; i < placeData.length; i += 3) {
-        String name = placeData[i].trim();
-        double x = Double.parseDouble(placeData[i + 1].trim());
-        double y = Double.parseDouble(placeData[i + 2].trim());
-        Location location = new Location(name, 0, 0); // temporär
-        location.setLayoutX(x);
-        location.setLayoutY(y);
-
-        location.setOnMouseClicked(ev -> {
-          ev.consume();
-          location.toggleSelection();
-        });
-
-        locations.add(location);
-        graph.add(location);
-        mapLayer.getChildren().add(location);
-      }
-
-      List<String> edgeParts = new ArrayList<>();
-      while (scanner.hasNextLine()) {
-        String[] parts = scanner.nextLine().split(";");
-        for (String part : parts) {
-          edgeParts.add(part.trim());
-        }
-      }
-
-      for (int i = 0; i < edgeParts.size(); i += 4) {
-        String fromName = edgeParts.get(i);
-        String toName = edgeParts.get(i + 1);
-        String connName = edgeParts.get(i + 2);
-        int weight = Integer.parseInt(edgeParts.get(i + 3));
-
-        Location from = findLocationByName(fromName);
-        Location to = findLocationByName(toName);
-        if (from != null && to != null) {
-          try {
-            graph.connect(from, to, connName, weight);
-            drawConnection(from, to);
-          } catch (Exception e) {
-            System.err.println("Kunde inte koppla " + fromName + " - " + toName + ": " + e.getMessage());
-          }
-        }
-      }
-    } catch (FileNotFoundException e) {
-      showErrorDialog("Fel vid inläsning av filen: " + e.getMessage());
-      e.printStackTrace();
-    }
-  }
-
-  private Location findLocationByName(String name) {
-    for (Location loc : locations) {
-      if (loc.getName().equals(name)) return loc;
-    }
-    return null;
-  }
-
-  private void drawConnection(Location from, Location to) {
-    Line line = new Line();
-    line.setStartX(from.getTranslateX());
-    line.setStartY(from.getTranslateY());
-    line.setEndX(to.getTranslateX());
-    line.setEndY(to.getTranslateY());
-    line.setStroke(Color.BLACK);
-    line.setStrokeWidth(2);
-    mapLayer.getChildren().add(line);
-  }
-
-  private void showErrorDialog(String message) {
-    Alert alert = new Alert(Alert.AlertType.ERROR);
-    alert.setTitle("Fel");
-    alert.setHeaderText("Ett fel inträffade");
-    alert.setContentText(message);
-    alert.showAndWait();
-  }
-
-
 
   //Metod som körs när användaren väljer "New Map" i menyn
   private void handleNewMap(Stage stage) {
@@ -469,6 +356,7 @@ public class Gui extends Application {
     // Avmarkera platser efteråt
     selectedStart.forEach(Location::toggleSelection);
   }
+
   private List<Location> findPath(Location start, Location end) {
     if (start.equals(end)) {
       return List.of(start);
@@ -501,17 +389,27 @@ public class Gui extends Application {
         }
       }
     }
+
     // Ingen väg hittades
     return null;
   }
+
+
+
   private void showError(String msg) {
     Alert alert = new Alert(Alert.AlertType.ERROR);
     alert.setTitle("Error");
     alert.setHeaderText(msg);
     alert.showAndWait();
   }
+
+
+
+
   //Startpunkt för programmet
   public static void main(String[] args) {
     launch(args); //Startar JavaFX-applikationen
   }
 }
+
+
