@@ -16,16 +16,11 @@ import javafx.stage.Stage;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.Cursor;
 import javafx.scene.paint.Color;
-//import javafx.scene.shape.Circle; //används inte nu
-//import se.su.inlupp.Graph;
-//import se.su.inlupp.ListGraph;
-//import se.su.inlupp.Edge;
 import javafx.application.Platform;
 
 import java.util.*;
 
 import javafx.scene.control.Alert;
-//import javafx.scene.control.Alert.AlertType;
 import javafx.scene.shape.Line;
 import java.io.FileNotFoundException;
 import java.io.IOException;
