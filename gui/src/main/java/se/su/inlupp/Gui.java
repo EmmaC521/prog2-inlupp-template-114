@@ -21,10 +21,8 @@ import javafx.scene.paint.Color;
 //import se.su.inlupp.ListGraph;
 //import se.su.inlupp.Edge;
 import javafx.application.Platform;
-import java.util.Queue;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.HashMap;
+
+import java.util.*;
 
 import javafx.scene.control.Alert;
 //import javafx.scene.control.Alert.AlertType;
@@ -32,9 +30,6 @@ import javafx.scene.shape.Line;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 
 import java.io.File;
 
@@ -104,8 +99,8 @@ public class Gui extends Application {
     newMapItem.setOnAction(e -> handleNewMap(stage));
     //Stänger fönstret när "Exit" väljs
     exitItem.setOnAction(e -> stage.close());
-    //openItem.setOnAction(e-> handleOpen(stage)); //Eventhanterare för menyval open
-    saveItem.setOnAction(e-> handleSave(stage)); //Eventhanterare för menyval save ev flytta ned
+    openItem.setOnAction(e-> handleOpen(stage)); //Eventhanterare för menyval open
+    saveItem.setOnAction(e-> handleSave(stage)); //Eventhanterare för menyval save
     //  När "New Place" klickas, kör metoden nedan
     findPathButton.setOnAction(e -> handleFindPath());
     newPlaceButton.setOnAction(e -> handleNewPlace());
@@ -208,6 +203,86 @@ public class Gui extends Application {
     mapView.setLayoutX((mapLayer.getWidth() - mapView.getBoundsInLocal().getWidth()) / 2);
     mapView.setLayoutY((mapLayer.getHeight() - mapView.getBoundsInLocal().getHeight()) / 2);
   }
+
+  private void handleOpen(Stage stage) {
+    FileChooser fileChooser = new FileChooser();
+    fileChooser.setTitle("Open Graph File");
+    fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Graph files", "*.graph"));
+    File file = fileChooser.showOpenDialog(stage);
+    if (file == null) return;
+
+    try (Scanner scanner = new Scanner(file)) {
+      //mapLayer.getChildren().clear();
+      //locations.clear();
+      //graph.clear();
+      if (!scanner.hasNextLine()) throw new IOException("File missing image line.");
+      String imageURL = scanner.nextLine();
+      Image image = new Image(imageURL);
+      mapView.setPreserveRatio(true);
+      mapView.setFitWidth(650);
+      mapView.setFitHeight(700);
+      mapLayer.setPrefWidth(mapView.getFitWidth());
+      mapLayer.setPrefHeight(mapView.getFitHeight());
+
+      if (!mapLayer.getChildren().contains(mapView)) {
+        mapLayer.getChildren().add(mapView);
+
+      }
+      if (!scanner.hasNextLine()) throw new IOException("File missing node line");
+      String nodeLine = scanner.nextLine();
+      String[] nodeParts = nodeLine.split(";");
+      for (int i = 0; i < nodeParts.length; i += 3) {
+        String name = nodeParts[i];
+        double x = Double.parseDouble(nodeParts[i + 1]);
+        double y = Double.parseDouble(nodeParts[i + 2]);
+
+        Location loc = new Location(name, x, y);
+        locations.add(loc);
+        graph.add(loc);
+        mapLayer.getChildren().add(loc);
+
+        loc.setOnMouseClicked(ev -> {
+          ev.consume();
+          loc.toggleSelection();
+        });
+      }
+
+      // 3. Läs in alla kanter
+      while (scanner.hasNextLine()) {
+        String line = scanner.nextLine();
+        String[] parts = line.split(";");
+        if (parts.length < 4) continue;
+
+        String fromName = parts[0];
+        String toName = parts[1];
+        String connName = parts[2];
+        int weight = Integer.parseInt(parts[3]);
+
+        Location from = findLocationByName(fromName);
+        Location to = findLocationByName(toName);
+        if (from != null && to != null) {
+          graph.connect(from, to, connName, weight);
+          Line edgeLine = new Line(from.getCenterX(), from.getCenterY(),
+                  to.getCenterX(), to.getCenterY());
+          edgeLine.setStroke(Color.GRAY);
+          mapLayer.getChildren().add(0, edgeLine);
+        }
+      }
+
+      enableAllButtons();
+
+    } catch (IOException | NumberFormatException e) {
+      showError("Could not open file: " + e.getMessage());
+    }
+
+  }
+  private Location findLocationByName(String name) {
+    for (Location loc : locations) {
+      if (loc.getName().equals(name)) return loc;
+    }
+    return null;
+  }
+
 
   private void handleNewPlace() {
     newPlaceButton.setDisable(true);
