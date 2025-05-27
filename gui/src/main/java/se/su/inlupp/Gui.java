@@ -1,6 +1,7 @@
 package se.su.inlupp;
 
 import javafx.application.Application;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -8,6 +9,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
+import javafx.scene.image.WritableImage;
 import javafx.scene.layout.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -22,12 +24,14 @@ import javafx.scene.paint.Color;
 //import se.su.inlupp.Edge;
 import javafx.application.Platform;
 
+import java.awt.image.BufferedImage;
 import java.util.*;
 
 import javafx.scene.control.Alert;
 //import javafx.scene.control.Alert.AlertType;
 import javafx.scene.shape.Line;
 
+import javax.imageio.ImageIO;
 import java.io.IOException;
 import java.io.PrintWriter;
 
@@ -49,10 +53,12 @@ public class Gui extends Application {
   private final List<Location> locations = new ArrayList<>();
   private final Graph<Location> graph = new ListGraph<>();
   private final Pane mapLayer = new Pane();
+  private Stage primaryStage;
 
   @Override
   public void start(Stage stage) {
-    //Kommer att användas senare
+    this.primaryStage = stage;
+
 
     //Menyn "file"
     Menu fileMenu = new Menu("File");
@@ -101,6 +107,7 @@ public class Gui extends Application {
     exitItem.setOnAction(e -> stage.close());
     openItem.setOnAction(e-> handleOpen(stage)); //Eventhanterare för menyval open
     saveItem.setOnAction(e-> handleSave(stage)); //Eventhanterare för menyval save
+    saveImageItem.setOnAction(e-> handleSaveImage());
     //  När "New Place" klickas, kör metoden nedan
     findPathButton.setOnAction(e -> handleFindPath());
     newPlaceButton.setOnAction(e -> handleNewPlace());
@@ -319,6 +326,19 @@ public class Gui extends Application {
         }
       }
     });
+  }
+
+  private void handleSaveImage() {
+    WritableImage image = primaryStage.getScene().snapshot(null);
+    BufferedImage bufferedImage = SwingFXUtils.fromFXImage(image, null);
+    File outputFile = new File("capture.png");
+
+    try {
+      ImageIO.write(bufferedImage, "png", outputFile);
+      System.out.println("Bild sparad som capture.png");
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
   }
 
   private void handleNewConnection() {
