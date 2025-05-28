@@ -509,7 +509,6 @@ public class Gui extends Application {
 
 
 
-
   //Startpunkt för programmet
   public static void main(String[] args) {
     launch(args); //Startar JavaFX-applikationen
