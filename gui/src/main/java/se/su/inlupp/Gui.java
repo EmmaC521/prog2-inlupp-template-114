@@ -31,7 +31,7 @@ import java.io.File;
 public class Gui extends Application {
 
 
-  //Skapar knappar för åtgärder
+  //Skapar knapparna som instansvariabler
   private final Button findPathButton = new Button ("Find Path");
   private final Button showConnectionButton = new Button ("Show Connection");
   private final Button newPlaceButton = new Button ("New Place");
