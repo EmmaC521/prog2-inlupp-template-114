@@ -19,8 +19,8 @@ public class Location extends Circle {
 
 
         // Positionera cirkeln på rätt plats
-        setTranslateX(x);
-        setTranslateY(y);
+        setCenterX(x);
+        setCenterY(y);
 
 
         // Sätt färg till blå som standard

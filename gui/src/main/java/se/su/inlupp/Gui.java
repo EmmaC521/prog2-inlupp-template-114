@@ -76,6 +76,7 @@ public class Gui extends Application {
 
     //Lägger ihop meny, karta och knappar i en vertikal layout,
     // Ändrat layouten till StackPane så att vi kan lägga platsmarkörer ovanpå kartan
+    mapLayer.getChildren().clear();
     mapLayer.getChildren().add(mapView);
     VBox topBox = new VBox(menuBar, buttonsPane);
     topBox.setAlignment(Pos.CENTER);
@@ -137,7 +138,9 @@ public class Gui extends Application {
     if (file == null) return;
 
     try (PrintWriter writer = new PrintWriter(file)) {
-      writer.println(mapView.getImage().getUrl());
+      String url = mapView.getImage().getUrl();
+      String imageName = url.substring(url.lastIndexOf('/') + 1);
+      writer.println("file:" + imageName);
 
       StringBuilder nodeLine = new StringBuilder();
       for(Location loc : locations) {
@@ -252,6 +255,18 @@ public class Gui extends Application {
     Location from = selected.get(0);
     Location to = selected.get(1);
 
+    TextInputDialog nameDialog = new TextInputDialog("Förbindelse");
+    nameDialog.setTitle("Connection Name");
+    nameDialog.setHeaderText("Enter name for the connection:");
+    Optional<String> nameResult = nameDialog.showAndWait();
+
+    if (nameResult.isEmpty() || nameResult.get().trim().isEmpty()) {
+      showError("You must enter a name for the connection.");
+      return;
+    }
+
+    String connectionName = nameResult.get().trim();
+
     TextInputDialog dialog = new TextInputDialog("1");
     dialog.setTitle("Connection Weight");
     dialog.setHeaderText("Enter weight for the connection:");
@@ -261,18 +276,22 @@ public class Gui extends Application {
       try {
         int weight = Integer.parseInt(result.get().trim());
 
-        graph.connect(from, to, "road", weight);
+        graph.connect(from, to, connectionName, weight);
 
         Line line = new Line(from.getCenterX(), from.getCenterY(),
                 to.getCenterX(), to.getCenterY());
         line.setStroke(Color.GRAY);
-        ((StackPane) mapView.getParent()).getChildren().add(0, line);
+        ((Pane) mapView.getParent()).getChildren().add(0, line);
 
         from.toggleSelection();
         to.toggleSelection();
 
       } catch (NumberFormatException e) {
         showError("Invalid number. Please enter an integer.");
+      } catch (IllegalStateException e) {
+        showError("Connection already exists.");
+      } catch (Exception e) {
+        showError("Error: " + e.getMessage());
       }
     }
   }
@@ -404,9 +423,16 @@ public class Gui extends Application {
     try (Scanner scanner = new Scanner(file)) {
       if(!scanner.hasNextLine()) return;
       String[] placeData = scanner.nextLine().split(";");
-      String imageFileName = placeData[0].replace("file:", "").trim();
-      File imageFile = new File(file.getParentFile(), imageFileName);
-      Image image = new Image(imageFile.toURI().toString());
+
+      String token = placeData[0].trim();
+      Image image;
+      if(token.startsWith("file:/") || token.startsWith("http")) {
+        image = new Image(token);
+      } else {
+        String imageFileName = token.replace("file:", "").trim();
+        File imageFile = new File(file.getParentFile(), imageFileName);
+        image = new Image(imageFile.toURI().toString());
+      }
       mapView.setImage(image);
       mapView.setPreserveRatio(true);
       mapView.setMouseTransparent(true);
@@ -416,30 +442,40 @@ public class Gui extends Application {
       mapLayer.setPrefWidth(mapView.getFitWidth());
       mapLayer.setPrefHeight(mapView.getFitHeight());
 
-      Platform.runLater(() -> {
-        mapView.setLayoutX((mapLayer.getWidth() - mapView.getBoundsInLocal().getWidth()) / 2);
-        mapView.setLayoutY((mapLayer.getHeight() - mapView.getBoundsInLocal().getHeight()) / 2);
-
-        enableAllButtons();
-      });
-
+      List<Location> tempLocations = new ArrayList<>();
       for (int i = 1; i < placeData.length; i += 3) {
         String name = placeData[i].trim();
         double x = Double.parseDouble(placeData[i + 1].trim());
         double y = Double.parseDouble(placeData[i + 2].trim());
-        Location location = new Location(name, 0, 0); // temporär
-        location.setLayoutX(x);
-        location.setLayoutY(y);
-
-        location.setOnMouseClicked(ev -> {
-          ev.consume();
-          location.toggleSelection();
-        });
-
-        locations.add(location);
-        graph.add(location);
-        mapLayer.getChildren().add(location);
+        Location location = new Location(name, x, y);
+        tempLocations.add(location);
       }
+
+      Platform.runLater(() -> {
+        // Centrera bilden
+        mapView.setLayoutX((mapLayer.getWidth() - mapView.getBoundsInLocal().getWidth()) / 2);
+        mapView.setLayoutY((mapLayer.getHeight() - mapView.getBoundsInLocal().getHeight()) / 2);
+
+        double offsetX = mapView.getLayoutX();
+        double offsetY = mapView.getLayoutY();
+
+        for (Location loc : tempLocations) {
+          loc.setCenterX(loc.getCenterX() + offsetX);
+          loc.setCenterY(loc.getCenterY() + offsetY);
+
+          loc.setOnMouseClicked(ev -> {
+            ev.consume();
+            loc.toggleSelection();
+          });
+
+          locations.add(loc);
+          graph.add(loc);
+          mapLayer.getChildren().add(loc);
+          loc.toFront();
+        }
+
+        enableAllButtons();
+      });
 
       List<String> edgeParts = new ArrayList<>();
       while (scanner.hasNextLine()) {
@@ -481,13 +517,13 @@ public class Gui extends Application {
 
   private void drawConnection(Location from, Location to) {
     Line line = new Line();
-    line.setStartX(from.getTranslateX());
-    line.setStartY(from.getTranslateY());
-    line.setEndX(to.getTranslateX());
-    line.setEndY(to.getTranslateY());
+    line.setStartX(from.getCenterX());
+    line.setStartY(from.getCenterY());
+    line.setEndX(to.getCenterX());
+    line.setEndY(to.getCenterY());
     line.setStroke(Color.BLACK);
     line.setStrokeWidth(2);
-    mapLayer.getChildren().add(line);
+    mapLayer.getChildren().add(0, line);
   }
 
   private void showErrorDialog(String message) {
@@ -514,5 +550,3 @@ public class Gui extends Application {
     launch(args); //Startar JavaFX-applikationen
   }
 }
-
-
