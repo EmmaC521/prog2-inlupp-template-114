@@ -126,14 +126,13 @@ public class Gui extends Application {
 
   //Metod för menyvalet "Save"
   private void handleSave(Stage stage) {
-    if (mapView.getImage() == null) {
-      showError("No map loaded. Cannot save.");
-      return;
-    }
+    //if (mapView.getImage() == null) {
+    //showError("No map loaded. Cannot save.");
+    //return;
+    // }
     FileChooser fileChooser = new FileChooser();
     fileChooser.setTitle("Save Graph File");
     fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Graph files", "*.graph"));
-
     File file = fileChooser.showSaveDialog(stage);
     if (file == null) return;
 
