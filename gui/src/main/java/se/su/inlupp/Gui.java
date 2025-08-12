@@ -133,6 +133,7 @@ public class Gui extends Application {
     FileChooser fileChooser = new FileChooser();
     fileChooser.setTitle("Save Graph File");
     fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Graph files", "*.graph"));
+
     File file = fileChooser.showSaveDialog(stage);
     if (file == null) return;
 
@@ -158,7 +159,7 @@ public class Gui extends Application {
           }
         }
       }
-      //hasUnsavedChanges = false; //Kommer att använas senare
+      //hasUnsavedChanges = false; //Kommer att användas senare
     } catch (IOException e) {
       showError("Could not save" + e.getMessage());
     }
