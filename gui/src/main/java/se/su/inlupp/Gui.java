@@ -252,6 +252,12 @@ public class Gui extends Application {
     Location from = selected.get(0);
     Location to = selected.get(1);
 
+    // Kolla om kanten redan finns mellan platserna
+    if (graph.getEdgeBetween(from, to) != null) {
+      showError("Connection already exists between these two places.");
+      return;
+    }
+
     TextInputDialog dialog = new TextInputDialog("1");
     dialog.setTitle("Connection Weight");
     dialog.setHeaderText("Enter weight for the connection:");
@@ -261,20 +267,77 @@ public class Gui extends Application {
       try {
         int weight = Integer.parseInt(result.get().trim());
 
+        // Lägg till kanten i grafen
         graph.connect(from, to, "road", weight);
 
-        Line line = new Line(from.getCenterX(), from.getCenterY(),
-                to.getCenterX(), to.getCenterY());
-        line.setStroke(Color.GRAY);
-        ((StackPane) mapView.getParent()).getChildren().add(0, line);
+        // Rita linjen som visar förbindelsen på kartan
+        drawConnection(from, to);
 
+        // Avmarkera valda platser
         from.toggleSelection();
         to.toggleSelection();
 
       } catch (NumberFormatException e) {
         showError("Invalid number. Please enter an integer.");
+      } catch (IllegalStateException e) {
+        // Om kant ändå redan finns (extra säkerhet)
+        showError("Connection already exists.");
       }
     }
+  }
+
+
+  private void handleFindPath() {
+    List<Location> selectedStart = locations.stream()
+            .filter(Location::isSelected)
+            .toList();
+
+    if (selectedStart.size() != 2) {
+      showError("Select exactly TWO places to find path.");
+      return;
+    }
+
+    Location start = selectedStart.get(0);
+    Location end = selectedStart.get(1);
+
+    List<Location> path = findPath(start, end);
+
+    if (path == null || path.isEmpty()) {
+      showError("No path found between selected locations.");
+      return;
+    }
+
+    StringBuilder pathStr = new StringBuilder();
+    int totalTime = 0;
+
+    pathStr.append("The Path from ").append(start.getName()).append(" to ").append(end.getName()).append(":\n\n");
+
+    for (int i = 0; i < path.size() - 1; i++) {
+      Location from = path.get(i);
+      Location to = path.get(i + 1);
+      Edge<Location> edge = graph.getEdgeBetween(from, to);
+
+      if (edge != null) {
+        pathStr.append("to ")
+                .append(to.getName())
+                .append(" by ")
+                .append(edge.getName())
+                .append(" takes ")
+                .append(edge.getWeight())
+                .append("\n");
+        totalTime += edge.getWeight();
+      }
+    }
+
+    pathStr.append("Total ").append(totalTime);
+
+    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+    alert.setTitle("The Path from " + start.getName() + " to " + end.getName());
+    alert.setHeaderText(null);
+    alert.setContentText(pathStr.toString());
+    alert.showAndWait();
+
+    selectedStart.forEach(Location::toggleSelection);
   }
 
   private void handleShowConnection() {
@@ -312,44 +375,6 @@ public class Gui extends Application {
     selected.forEach(Location::toggleSelection);
   }
 
-  private void handleFindPath() {
-    // Välj startplats
-    List<Location> selectedStart = locations.stream()
-            .filter(Location::isSelected)
-            .toList();
-
-    if (selectedStart.size() != 2) {
-      showError("Select exactly TWO places to find path.");
-      return;
-    }
-
-    Location start = selectedStart.get(0);
-    Location end = selectedStart.get(1);
-
-    List<Location> path = findPath(start, end);
-
-    if (path == null || path.isEmpty()) {
-      showError("No path found between selected locations.");
-      return;
-    }
-
-    // Markera eller visa vägen på något sätt
-    StringBuilder pathStr = new StringBuilder();
-    for (Location loc : path) {
-      if (pathStr.length() > 0) pathStr.append(" -> ");
-      pathStr.append(loc.getName());
-    }
-
-    Alert alert = new Alert(Alert.AlertType.INFORMATION);
-    alert.setTitle("Found Path");
-    alert.setHeaderText("Path from " + start.getName() + " to " + end.getName());
-    alert.setContentText(pathStr.toString());
-    alert.showAndWait();
-
-    // Avmarkera platser efteråt
-    selectedStart.forEach(Location::toggleSelection);
-  }
-
   private List<Location> findPath(Location start, Location end) {
     if (start.equals(end)) {
       return List.of(start);
@@ -365,7 +390,6 @@ public class Gui extends Application {
       Location current = queue.poll();
 
       if (current.equals(end)) {
-        // Bygg vägen baklänges
         List<Location> path = new LinkedList<>();
         for (Location loc = end; loc != null; loc = cameFrom.get(loc)) {
           path.add(0, loc);
@@ -373,7 +397,6 @@ public class Gui extends Application {
         return path;
       }
 
-      // Utforska grannarna
       for (Edge<Location> edge : graph.getEdgesFrom(current)) {
         Location neighbor = edge.getDestination();
         if (!cameFrom.containsKey(neighbor)) {
@@ -383,9 +406,11 @@ public class Gui extends Application {
       }
     }
 
-    // Ingen väg hittades
     return null;
   }
+
+
+
   private void handleOpen(Stage stage) {
     FileChooser fileChooser = new FileChooser();
     fileChooser.setTitle("Open Graph File");
@@ -478,17 +503,23 @@ public class Gui extends Application {
     }
     return null;
   }
-
+//Ny drawconnection
   private void drawConnection(Location from, Location to) {
-    Line line = new Line();
-    line.setStartX(from.getTranslateX());
-    line.setStartY(from.getTranslateY());
-    line.setEndX(to.getTranslateX());
-    line.setEndY(to.getTranslateY());
-    line.setStroke(Color.BLACK);
+    // Hämta platsens mitt i mapLayer-koordinater
+    double startX = from.localToParent(from.getBoundsInLocal()).getMinX() + from.getBoundsInLocal().getWidth() / 2;
+    double startY = from.localToParent(from.getBoundsInLocal()).getMinY() + from.getBoundsInLocal().getHeight() / 2;
+
+    double endX = to.localToParent(to.getBoundsInLocal()).getMinX() + to.getBoundsInLocal().getWidth() / 2;
+    double endY = to.localToParent(to.getBoundsInLocal()).getMinY() + to.getBoundsInLocal().getHeight() / 2;
+
+    Line line = new Line(startX, startY, endX, endY);
+    line.setStroke(Color.GRAY);
     line.setStrokeWidth(2);
-    mapLayer.getChildren().add(line);
+
+    // Lägg linjen längst bak i mapLayer
+    mapLayer.getChildren().add(0, line);
   }
+
 
   private void showErrorDialog(String message) {
     Alert alert = new Alert(Alert.AlertType.ERROR);
