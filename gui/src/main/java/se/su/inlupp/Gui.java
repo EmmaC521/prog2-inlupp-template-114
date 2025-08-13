@@ -126,10 +126,10 @@ public class Gui extends Application {
 
   //Metod för menyvalet "Save"
   private void handleSave(Stage stage) {
-    //if (mapView.getImage() == null) {
-    //showError("No map loaded. Cannot save.");
-    //return;
-    // }
+    if (mapView.getImage() == null) {
+    showError("No map loaded. Cannot save.");
+    return;
+    }
     FileChooser fileChooser = new FileChooser();
     fileChooser.setTitle("Save Graph File");
     fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Graph files", "*.graph"));
@@ -143,8 +143,8 @@ public class Gui extends Application {
       for(Location loc : locations) {
         if (!nodeLine.isEmpty())  nodeLine.append(";");
         nodeLine.append(loc.getName()).append(";")
-                .append(loc.getCenterX()).append(";")
-                .append(loc.getCenterY());
+                .append(loc.getX()).append(";")
+                .append(loc.getY());
       }
       writer.println(nodeLine);
 
@@ -418,70 +418,62 @@ public class Gui extends Application {
     File file = fileChooser.showOpenDialog(stage);
     if (file == null) return;
 
+    // Rensa nuvarande data
     locations.clear();
     mapLayer.getChildren().clear();
     mapLayer.getChildren().add(mapView);
 
+    // Rensa grafen på nuvarande noder
     for (Location location : new ArrayList<>(graph.getNodes())) {
       graph.remove(location);
     }
 
     try (Scanner scanner = new Scanner(file)) {
-      if(!scanner.hasNextLine()) return;
-      String[] placeData = scanner.nextLine().split(";");
-      String imageFileName = placeData[0].replace("file:", "").trim();
-      File imageFile = new File(file.getParentFile(), imageFileName);
-      Image image = new Image(imageFile.toURI().toString());
-      mapView.setImage(image);
+
+      // Läs första raden: URL till kartbilden
+      if (!scanner.hasNextLine()) return;
+      String imageUrl = scanner.nextLine().trim();
+      Image img = new Image(imageUrl);
+      mapView.setImage(img);
       mapView.setPreserveRatio(true);
       mapView.setMouseTransparent(true);
       mapView.setFitWidth(650);
       mapView.setFitHeight(700);
 
-      mapLayer.setPrefWidth(mapView.getFitWidth());
-      mapLayer.setPrefHeight(mapView.getFitHeight());
+      // Läs andra raden: alla noder
+      if (!scanner.hasNextLine()) return;
+      String[] nodeParts = scanner.nextLine().split(";");
+      for (int i = 0; i < nodeParts.length; i += 3) {
+        String name = nodeParts[i].trim();
+        double x = Double.parseDouble(nodeParts[i + 1].trim());
+        double y = Double.parseDouble(nodeParts[i + 2].trim());
 
-      Platform.runLater(() -> {
-        mapView.setLayoutX((mapLayer.getWidth() - mapView.getBoundsInLocal().getWidth()) / 2);
-        mapView.setLayoutY((mapLayer.getHeight() - mapView.getBoundsInLocal().getHeight()) / 2);
-
-        enableAllButtons();
-      });
-
-      for (int i = 1; i < placeData.length; i += 3) {
-        String name = placeData[i].trim();
-        double x = Double.parseDouble(placeData[i + 1].trim());
-        double y = Double.parseDouble(placeData[i + 2].trim());
-        Location location = new Location(name, 0, 0); // temporär
-        location.setLayoutX(x);
-        location.setLayoutY(y);
-
-        location.setOnMouseClicked(ev -> {
-          ev.consume();
-          location.toggleSelection();
-        });
-
+        Location location = new Location(name, x, y);
+        //location.setLayoutX(x);
+        //location.setLayoutY(y);
         locations.add(location);
         graph.add(location);
         mapLayer.getChildren().add(location);
+        /*
+        location.setOnMouseClicked(ev -> {
+          ev.consume();
+          location.toggleSelection();
+        }); */
       }
 
-      List<String> edgeParts = new ArrayList<>();
+      // --- 3. Läs resterande rader: förbindelser ---
       while (scanner.hasNextLine()) {
         String[] parts = scanner.nextLine().split(";");
-        for (String part : parts) {
-          edgeParts.add(part.trim());
-        }
-      }
+        if (parts.length < 4) continue;
 
-      for (int i = 0; i < edgeParts.size(); i += 4) {
-        String fromName = edgeParts.get(i);
-        String toName = edgeParts.get(i + 1);
-        String connName = edgeParts.get(i + 2);
-        int weight = Integer.parseInt(edgeParts.get(i + 3));
+        String fromName = parts[0].trim();
+        String toName = parts[1].trim();
+        String connName = parts[2].trim();
+        int weight = Integer.parseInt(parts[3].trim());
 
         Location from = findLocationByName(fromName);
         Location to = findLocationByName(toName);
+
         if (from != null && to != null) {
           try {
             graph.connect(from, to, connName, weight);
@@ -491,19 +483,40 @@ public class Gui extends Application {
           }
         }
       }
-    } catch (FileNotFoundException e) {
+
+      //Centrera kartbilden
+      Platform.runLater(() -> {
+        double offsetX = (mapLayer.getWidth() - img.getWidth()) / 2;
+        double offsetY = (mapLayer.getHeight() - img.getHeight()) / 2;
+
+        mapView.setLayoutX(offsetX);
+        mapView.setLayoutY(offsetY);
+
+        for (Location loc : locations) {
+          loc.setLayoutX(loc.getLayoutX() + offsetX);
+          loc.setLayoutY(loc.getLayoutY() + offsetY);
+        }
+        enableAllButtons();
+      });
+
+    } catch (IOException e) {
       showErrorDialog("Fel vid inläsning av filen: " + e.getMessage());
       e.printStackTrace();
     }
   }
 
+  // Hjälpmetod för att hitta en plats via namn
   private Location findLocationByName(String name) {
     for (Location loc : locations) {
-      if (loc.getName().equals(name)) return loc;
+      if (loc.getName().equals(name)) {
+        return loc;
+      }
     }
     return null;
   }
-//Ny drawconnection
+
+
+  //Ny drawconnection
   private void drawConnection(Location from, Location to) {
     // Hämta platsens mitt i mapLayer-koordinater
     double startX = from.localToParent(from.getBoundsInLocal()).getMinX() + from.getBoundsInLocal().getWidth() / 2;
