@@ -260,6 +260,13 @@ public class Gui extends Application {
           // Gör platsen klickbar för att markera/avmarkera
           loc.setOnMouseClicked(ev -> {
             ev.consume();
+            long selectedCount = locations.stream().filter(Location::isSelected).count();
+
+            if (!loc.isSelected() && selectedCount >= 2) {
+              showError("You can only select up to TWO places at the same time.");
+              return;
+            }
+
             loc.toggleSelection();
           });
 
@@ -570,6 +577,13 @@ public class Gui extends Application {
 
         location.setOnMouseClicked(ev -> {
           ev.consume();
+          long selectedCount = locations.stream().filter(Location::isSelected).count();
+
+          if (!location.isSelected() && selectedCount >= 2) {
+            showError("You can only select up to TWO places at the same time.");
+            return;
+          }
+
           location.toggleSelection();
         });
       }
