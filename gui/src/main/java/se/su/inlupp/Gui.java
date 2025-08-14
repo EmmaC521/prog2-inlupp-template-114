@@ -179,11 +179,13 @@ public class Gui extends Application {
   //Metod som körs när användaren väljer "New Map" i menyn
   private void handleNewMap(Stage stage) {
     if (!confirmDiscardIfDirty()) return;
+
     FileChooser fileChooser = new FileChooser(); //Öppnar filväljaren
     fileChooser.setTitle("Open Map Image"); //Titel i filväljaren
     fileChooser.getExtensionFilters().add(
             new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg", "*.gif")
     );
+
     File file = fileChooser.showOpenDialog(stage); //Visar dialog och väntar på filval
     if (file != null) {
       //Laddar bilden och den valda filen
@@ -211,8 +213,14 @@ public class Gui extends Application {
     }
   }
   private void centerImage() {
-    mapView.setLayoutX((mapLayer.getWidth() - mapView.getBoundsInLocal().getWidth()) / 2);
-    mapView.setLayoutY((mapLayer.getHeight() - mapView.getBoundsInLocal().getHeight()) / 2);
+    if (mapView.getImage() == null) return;
+
+    double offsetX = (mapLayer.getWidth() - mapView.getBoundsInLocal().getWidth() / 2);
+    double offsetY = (mapLayer.getHeight() - mapView.getBoundsInLocal().getHeight() / 2);
+
+    mapView.setLayoutX(offsetX);
+    mapView.setLayoutY(offsetY);
+
   }
 
   private void handleNewPlace() {
@@ -506,14 +514,13 @@ public class Gui extends Application {
       Platform.runLater(() -> {
         double offsetX = (mapLayer.getWidth() - img.getWidth()) / 2;
         double offsetY = (mapLayer.getHeight() - img.getHeight()) / 2;
-
         mapView.setLayoutX(offsetX);
         mapView.setLayoutY(offsetY);
 
-        for (Location loc : locations) {
-          loc.setLayoutX(loc.getLayoutX() + offsetX);
-          loc.setLayoutY(loc.getLayoutY() + offsetY);
-        }
+        //for (Location loc : locations) {
+          //loc.setLayoutX(loc.getLayoutX() + offsetX);
+          //loc.setLayoutY(loc.getLayoutY() + offsetY);
+        //}
         enableAllButtons();
         hasUnsavedChanges = false;
       });
