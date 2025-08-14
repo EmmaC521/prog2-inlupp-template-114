@@ -113,6 +113,8 @@ public class Gui extends Application {
     newPlaceButton.setOnAction(e -> handleNewPlace());
     newConnectionButton.setOnAction(e -> handleNewConnection());
     showConnectionButton.setOnAction(e -> handleShowConnection());
+    changeConnectionButton.setOnAction(e -> handleChangeConnection());
+
 
     stage.setOnCloseRequest(evt -> { if (!confirmDiscardIfDirty()) evt.consume(); });
 
@@ -275,42 +277,109 @@ public class Gui extends Application {
     Location from = selected.get(0);
     Location to = selected.get(1);
 
-    // Kolla om kanten redan finns mellan platserna
     if (graph.getEdgeBetween(from, to) != null) {
       showError("Connection already exists between these two places.");
       return;
     }
 
-    TextInputDialog dialog = new TextInputDialog("1");
-    dialog.setTitle("Connection Weight");
-    dialog.setHeaderText("Enter weight for the connection:");
-    Optional<String> result = dialog.showAndWait();
+    // Fråga efter typ av resa
+    TextInputDialog typeDialog = new TextInputDialog("road");
+    typeDialog.setTitle("Connection Type");
+    typeDialog.setHeaderText("Enter type of connection (e.g., road, rail, air):");
+    Optional<String> typeResult = typeDialog.showAndWait();
+    if (typeResult.isEmpty()) return;
+    String connType = typeResult.get().trim();
+    if (connType.isEmpty()) {
+      showError("Type cannot be empty.");
+      return;
+    }
 
-    if (result.isPresent()) {
-      try {
-        int weight = Integer.parseInt(result.get().trim());
+    // Fråga efter tid
+    TextInputDialog timeDialog = new TextInputDialog("1");
+    timeDialog.setTitle("Connection Time");
+    timeDialog.setHeaderText("Enter travel time for the connection:");
+    Optional<String> timeResult = timeDialog.showAndWait();
+    if (timeResult.isEmpty()) return;
 
-        // Lägg till kanten i grafen
-        graph.connect(from, to, "road", weight);
-
-        // Rita linjen som visar förbindelsen på kartan
-        drawConnection(from, to);
-
-        hasUnsavedChanges = true;
-
-        // Avmarkera valda platser
-        from.toggleSelection();
-        to.toggleSelection();
-
-      } catch (NumberFormatException e) {
-        showError("Invalid number. Please enter an integer.");
-      } catch (IllegalStateException e) {
-        // Om kant ändå redan finns (extra säkerhet)
-        showError("Connection already exists.");
+    try {
+      int weight = Integer.parseInt(timeResult.get().trim());
+      if (weight <= 0) {
+        showError("Time must be a positive integer.");
+        return;
       }
+
+      // Lägg till kanten
+      graph.connect(from, to, connType, weight);
+      drawConnection(from, to);
+      hasUnsavedChanges = true;
+
+      // Avmarkera
+      from.toggleSelection();
+      to.toggleSelection();
+
+    } catch (NumberFormatException e) {
+      showError("Invalid number. Please enter an integer.");
+    } catch (IllegalStateException e) {
+      showError("Connection already exists.");
     }
   }
 
+
+  private void handleChangeConnection() {
+    List<Location> selected = locations.stream()
+            .filter(Location::isSelected)
+            .toList();
+
+    if (selected.size() != 2) {
+      showError("Select exactly TWO places to change connection.");
+      return;
+    }
+
+    Location from = selected.get(0);
+    Location to = selected.get(1);
+
+    Edge<Location> edge = graph.getEdgeBetween(from, to);
+    if (edge == null) {
+      showError("No connection exists between these places.");
+      return;
+    }
+
+    // Visa nuvarande typ
+    String currentType = edge.getName();
+    String currentTime = String.valueOf(edge.getWeight());
+
+    // Fråga om ny tid
+    TextInputDialog timeDialog = new TextInputDialog(currentTime);
+    timeDialog.setTitle("Change Connection");
+    timeDialog.setHeaderText("Change travel time for: " + from.getName() + " ↔ " + to.getName() +
+            "\nType: " + currentType);
+    Optional<String> timeResult = timeDialog.showAndWait();
+    if (timeResult.isEmpty()) return;
+
+    try {
+      int newTime = Integer.parseInt(timeResult.get().trim());
+      if (newTime <= 0) {
+        showError("Time must be a positive integer.");
+        return;
+      }
+
+      // Om Edge har setWeight()
+      try {
+        edge.setWeight(newTime);
+      } catch (NoSuchMethodError | UnsupportedOperationException ex) {
+        // Om det inte finns setWeight i Edge-klassen, koppla om kanten
+        graph.disconnect(from, to); // Kräver att du har en disconnect-metod
+        graph.connect(from, to, currentType, newTime);
+      }
+
+      hasUnsavedChanges = true;
+      from.toggleSelection();
+      to.toggleSelection();
+
+    } catch (NumberFormatException e) {
+      showError("Invalid number. Please enter an integer.");
+    }
+  }
 
   private void handleFindPath() {
     List<Location> selectedStart = locations.stream()
@@ -480,11 +549,11 @@ public class Gui extends Application {
         locations.add(location);
         graph.add(location);
         mapLayer.getChildren().add(location);
-        /*
+
         location.setOnMouseClicked(ev -> {
           ev.consume();
           location.toggleSelection();
-        }); */
+        });
       }
 
       // --- 3. Läs resterande rader: förbindelser ---
