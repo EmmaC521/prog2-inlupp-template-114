@@ -191,23 +191,28 @@ public class Gui extends Application {
     File file = fileChooser.showOpenDialog(stage); //Visar dialog och väntar på filval
     if (file != null) {
       //Laddar bilden och den valda filen
-      Image image = new Image(file.toURI().toString());
+      Image image = new Image(file.toURI().toString(), 650, 0 , true, true);
       mapView.setImage(image); //Visar bilden i gränssnittet
       mapView.setPreserveRatio(true); //Bevarar bildens proportioner
-      mapView.setFitWidth(650); //Sätter bildens bredd
-      mapView.setFitHeight(700); //Sätter bildens höjd
+      //mapView.setFitWidth(650); //Sätter bildens bredd
+      //mapView.setFitHeight(700); //Sätter bildens höjd
 
-      mapLayer.setPrefWidth(mapView.getFitWidth());
-      mapLayer.setPrefHeight(mapView.getFitHeight());
+      mapLayer.setPrefWidth(650);
+      mapLayer.setPrefHeight(image.getHeight());
 
       if (!mapLayer.getChildren().contains(mapView)) {
         mapLayer.getChildren().add(mapView);
       }
 
-      // Vänta på att bilden är helt laddad innan centrering
+      /*// Vänta på att bilden är helt laddad innan centrering
       Platform.runLater(() -> {
         mapView.setLayoutX((mapLayer.getWidth() - mapView.getBoundsInLocal().getWidth()) / 2);
         mapView.setLayoutY((mapLayer.getHeight() - mapView.getBoundsInLocal().getHeight()) / 2);
+      }); */
+      image.progressProperty().addListener((obs, oldVal, newVal) -> {
+        if (newVal.doubleValue() == 1.0) {
+          centerImage();
+        }
       });
 
       enableAllButtons();// Aktivera knapparna efter bildval så att användaren kan fortsätta
@@ -507,6 +512,7 @@ public class Gui extends Application {
 
   private void handleOpen(Stage stage) {
     if (!confirmDiscardIfDirty()) return;
+
     FileChooser fileChooser = new FileChooser();
     fileChooser.setTitle("Open Graph File");
     fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Graph files", "*.graph"));
@@ -528,12 +534,24 @@ public class Gui extends Application {
       // Läs första raden: URL till kartbilden
       if (!scanner.hasNextLine()) return;
       String imageUrl = scanner.nextLine().trim();
-      Image img = new Image(imageUrl);
-      mapView.setImage(img);
+      Image image = new Image(imageUrl, 650, 0, true, true);
+      mapView.setImage(image);
       mapView.setPreserveRatio(true);
       mapView.setMouseTransparent(true);
-      mapView.setFitWidth(650);
-      mapView.setFitHeight(700);
+
+      mapLayer.setPrefWidth(650);
+      mapLayer.setPrefHeight(image.getHeight());
+
+      if(!mapLayer.getChildren().contains(mapView)) {
+        mapLayer.getChildren().add(mapView);
+      }
+      image.progressProperty().addListener((obs, oldVal, newVal) -> {
+        if(newVal.doubleValue() == 1.0) {
+          centerImage();
+          enableAllButtons();
+          hasUnsavedChanges = false;
+        }
+      });
 
       // Läs andra raden: alla noder
       if (!scanner.hasNextLine()) return;
@@ -579,7 +597,7 @@ public class Gui extends Application {
         }
       }
 
-      //Centrera kartbilden
+      /*//Centrera kartbilden
       Platform.runLater(() -> {
         double offsetX = (mapLayer.getWidth() - img.getWidth()) / 2;
         double offsetY = (mapLayer.getHeight() - img.getHeight()) / 2;
@@ -592,7 +610,7 @@ public class Gui extends Application {
         //}
         enableAllButtons();
         hasUnsavedChanges = false;
-      });
+      });*/
 
     } catch (IOException e) {
       showErrorDialog("Fel vid inläsning av filen: " + e.getMessage());
