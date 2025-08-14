@@ -21,6 +21,7 @@ import javafx.application.Platform;
 import java.util.*;
 
 import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 import javafx.scene.shape.Line;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -44,6 +45,14 @@ public class Gui extends Application {
   private final List<Location> locations = new ArrayList<>();
   private final Graph<Location> graph = new ListGraph<>();
   private final Pane mapLayer = new Pane();
+  private boolean hasUnsavedChanges = false;
+
+  private boolean confirmDiscardIfDirty() {
+    if (!hasUnsavedChanges) return true;
+    Alert a = new Alert(Alert.AlertType.CONFIRMATION, "Discard unsaved changes?", ButtonType.OK, ButtonType.CANCEL);
+    a.setTitle("Unsaved changes");
+    return a.showAndWait().filter(bt -> bt == ButtonType.OK).isPresent();
+    }
 
   @Override
   public void start(Stage stage) {
@@ -93,7 +102,7 @@ public class Gui extends Application {
     //Kopplar menyvalet "New map" till metoden handleNewMap
     newMapItem.setOnAction(e -> handleNewMap(stage));
     //Stänger fönstret när "Exit" väljs
-    exitItem.setOnAction(e -> stage.close());
+    exitItem.setOnAction(e -> { if (confirmDiscardIfDirty()) stage.close(); });
     //openItem.setOnAction(e-> handleOpen(stage)); //Eventhanterare för menyval open
     saveItem.setOnAction(e-> handleSave(stage)); //Eventhanterare för menyval save ev flytta ned
 
@@ -104,6 +113,8 @@ public class Gui extends Application {
     newPlaceButton.setOnAction(e -> handleNewPlace());
     newConnectionButton.setOnAction(e -> handleNewConnection());
     showConnectionButton.setOnAction(e -> handleShowConnection());
+
+    stage.setOnCloseRequest(evt -> { if (!confirmDiscardIfDirty()) evt.consume(); });
 
 
   }
@@ -158,7 +169,7 @@ public class Gui extends Application {
           }
         }
       }
-      //hasUnsavedChanges = false; //Kommer att användas senare
+      hasUnsavedChanges = false;
     } catch (IOException e) {
       showError("Could not save" + e.getMessage());
     }
@@ -167,6 +178,7 @@ public class Gui extends Application {
 
   //Metod som körs när användaren väljer "New Map" i menyn
   private void handleNewMap(Stage stage) {
+    if (!confirmDiscardIfDirty()) return;
     FileChooser fileChooser = new FileChooser(); //Öppnar filväljaren
     fileChooser.setTitle("Open Map Image"); //Titel i filväljaren
     fileChooser.getExtensionFilters().add(
@@ -195,6 +207,7 @@ public class Gui extends Application {
       });
 
       enableAllButtons();// Aktivera knapparna efter bildval så att användaren kan fortsätta
+      hasUnsavedChanges = false;
     }
   }
   private void centerImage() {
@@ -234,6 +247,8 @@ public class Gui extends Application {
             ev.consume();
             loc.toggleSelection();
           });
+
+          hasUnsavedChanges = true;
         }
       }
     });
@@ -272,6 +287,8 @@ public class Gui extends Application {
 
         // Rita linjen som visar förbindelsen på kartan
         drawConnection(from, to);
+
+        hasUnsavedChanges = true;
 
         // Avmarkera valda platser
         from.toggleSelection();
@@ -412,6 +429,7 @@ public class Gui extends Application {
 
 
   private void handleOpen(Stage stage) {
+    if (!confirmDiscardIfDirty()) return;
     FileChooser fileChooser = new FileChooser();
     fileChooser.setTitle("Open Graph File");
     fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Graph files", "*.graph"));
@@ -497,6 +515,7 @@ public class Gui extends Application {
           loc.setLayoutY(loc.getLayoutY() + offsetY);
         }
         enableAllButtons();
+        hasUnsavedChanges = false;
       });
 
     } catch (IOException e) {
@@ -550,7 +569,6 @@ public class Gui extends Application {
     alert.setHeaderText(msg);
     alert.showAndWait();
   }
-
 
 
   //Startpunkt för programmet
