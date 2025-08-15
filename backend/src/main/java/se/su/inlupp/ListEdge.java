@@ -1,5 +1,11 @@
+// Grupp 114
+// Emma Carlsson emka4860
+// David Stenberg Kawati dast9610
+// Hillevi Sandberg Noppa hisa2469
+
 package se.su.inlupp;
 
+//Denna klass används för att representera en riktad kant i en oriktad graf implementerad med kopplingslistor
 public class ListEdge<T> implements Edge<T> {
 
     private final T destination;
