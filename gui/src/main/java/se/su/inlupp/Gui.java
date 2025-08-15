@@ -1,6 +1,7 @@
 package se.su.inlupp;
 
 import javafx.application.Application;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -8,6 +9,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
+import javafx.scene.image.WritableImage;
 import javafx.scene.layout.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -21,6 +23,8 @@ import java.util.*;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.shape.Line;
+
+import javax.imageio.ImageIO;
 import java.io.IOException;
 import java.io.PrintWriter;
 
@@ -103,6 +107,7 @@ public class Gui extends Application {
     saveItem.setOnAction(e-> handleSave(stage)); //Eventhanterare för menyval save ev flytta ned
 
     openItem.setOnAction(e -> handleOpen(stage));
+    saveImageItem.setOnAction(e -> handleSaveImage(stage));
 
     //  När "New Place" klickas, kör metoden nedan
     findPathButton.setOnAction(e -> handleFindPath());
@@ -601,6 +606,19 @@ public class Gui extends Application {
     } catch (IOException e) {
       showErrorDialog("Fel vid inläsning av filen: " + e.getMessage());
       e.printStackTrace();
+    }
+  }
+
+  private void handleSaveImage(Stage stage) {
+    try{
+      WritableImage image = stage.getScene().snapshot(null);
+      File file = new File("capture.png");
+
+      ImageIO.write(SwingFXUtils.fromFXImage(image, null), "png", file);
+
+
+    } catch (IOException ex) {
+      showError("Failed to save image: " + ex.getMessage());
     }
   }
 
