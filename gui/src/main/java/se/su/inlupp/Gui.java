@@ -140,19 +140,24 @@ public class Gui extends Application {
 
   //Metod för menyvalet "Save"
   private void handleSave(Stage stage) {
+    //Kontrollerar att det finns en uppladdad karta att spara
     if (mapView.getImage() == null) {
       showError("No map loaded. Cannot save.");
       return;
     }
+    //Skapar filväljare och dialog, ser till att filen sparas som *.graph
     FileChooser fileChooser = new FileChooser();
     fileChooser.setTitle("Save Graph File");
     fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Graph files", "*.graph"));
     File file = fileChooser.showSaveDialog(stage);
     if (file == null) return;
 
+    //Öppnar filen för att skriva in information
     try (PrintWriter writer = new PrintWriter(file)) {
+      //Skriver bildens URL på rad 1
       writer.println(mapView.getImage().getUrl());
 
+      //Skriver alla platser på andra raden
       StringBuilder nodeLine = new StringBuilder();
       for(Location loc : locations) {
         if (!nodeLine.isEmpty())  nodeLine.append(";");
@@ -162,7 +167,7 @@ public class Gui extends Application {
       }
       writer.println(nodeLine);
 
-
+      //Skriver alla förbindelser på rad 3 och nedåt
       for (Location from : locations) {
         for (Edge<Location> edge : graph.getEdgesFrom(from)) {
           Location to = edge.getDestination();
@@ -172,6 +177,7 @@ public class Gui extends Application {
           }
         }
       }
+      //Sätts till false då det inte längre finns osparade ändringar
       hasUnsavedChanges = false;
     } catch (IOException e) {
       showError("Could not save" + e.getMessage());
@@ -180,17 +186,19 @@ public class Gui extends Application {
   }
 
   private void handleNewMap(Stage stage) {
+    //Kontrollerar osparade ändringar
     if (!confirmDiscardIfDirty()) return;
 
+    //Skapar filväljare för kartbild och tillåter 4 filformat.
     FileChooser fileChooser = new FileChooser();
     fileChooser.setTitle("Open Map Image");
-    fileChooser.getExtensionFilters().add(
-            new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg", "*.gif")
-    );
+    fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg", "*.gif"));
 
+    //Visar dialog
     File file = fileChooser.showOpenDialog(stage);
     if (file == null) return;
 
+    //Rensar nuvarande data och lägger endast till bildvyn/kartan
     locations.clear();
     for (Location n : new ArrayList<>(graph.getNodes())) {
       graph.remove(n);
@@ -198,15 +206,18 @@ public class Gui extends Application {
     mapLayer.getChildren().clear();
     mapLayer.getChildren().add(mapView);
 
+    //Laddar bilden med maxstorlek och behåller proportioner
     Image image = new Image(file.toURI().toString(), 650, 700, true, true);
     mapView.setImage(image);
     mapView.setPreserveRatio(true);
     mapView.setFitWidth(650);
     mapView.setFitHeight(700);
 
+    //Anpassar storlek på mapLayer så den passar bildens storlek
     mapLayer.setPrefWidth(mapView.getBoundsInLocal().getWidth());
     mapLayer.setPrefHeight(mapView.getBoundsInLocal().getHeight());
 
+    //Väntar på att bilden är ritad innan bild centreras och knappar aktiveras
     Platform.runLater(() -> {
       centerImage();
       enableAllButtons();
@@ -214,7 +225,9 @@ public class Gui extends Application {
     });
   }
 
+  //Hjälpmetod för att centrera bild vid uppladnding
   private void centerImage() {
+    //Returnerar om ingen bild finns att centrera
     if (mapView.getImage() == null) return;
 
     double offsetX = (mapLayer.getWidth() - mapView.getBoundsInLocal().getWidth()) / 2;
@@ -512,48 +525,49 @@ public class Gui extends Application {
 
 
   private void handleOpen(Stage stage) {
+    //Kollar om det finns osparade ändringar
     if (!confirmDiscardIfDirty()) return;
-
+    // Öppnar filväljare och dialog och ser till att filen sparas som *.graph
     FileChooser fileChooser = new FileChooser();
     fileChooser.setTitle("Open Graph File");
     fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Graph files", "*.graph"));
     File file = fileChooser.showOpenDialog(stage);
     if (file == null) return;
 
-    // Rensa nuvarande data
+    // Rensar nuvarande data så
     locations.clear();
     mapLayer.getChildren().clear();
     mapLayer.getChildren().add(mapView);
 
-    // Rensa grafen på nuvarande noder
+    // Rensar grafen på nuvarande noder
     for (Location location : new ArrayList<>(graph.getNodes())) {
       graph.remove(location);
     }
-
+    //Öppnar och läser från filen
     try (Scanner scanner = new Scanner(file)) {
 
-      // Läs första raden: URL till kartbilden
+      // Läser första raden URL till kartbilden
       if (!scanner.hasNextLine()) return;
       String imageUrl = scanner.nextLine().trim();
       Image image = new Image(imageUrl, 650, 700, true, true);
       mapView.setImage(image);
       mapView.setPreserveRatio(true);
-      //mapView.setMouseTransparent(true);
 
+      //Anpassa kartans storlek och behåller proportionerna
       mapLayer.setPrefWidth(650);
-      mapLayer.setPrefHeight(700); //TEST
+      mapLayer.setPrefHeight(700);
 
       if(!mapLayer.getChildren().contains(mapView)) {
         mapLayer.getChildren().add(mapView);
       }
-
+      //Väntar på att bilden är laddad innan den centreras och knappar aktiveras
       Platform.runLater(() -> {
         centerImage();
         enableAllButtons();
         hasUnsavedChanges = false;
       });
 
-      // Läs andra raden: alla noder
+      // Läser andra raden, alla noder och skapar en locationknapp för varje nod
       if (!scanner.hasNextLine()) return;
       String[] nodeParts = scanner.nextLine().split(";");
       for (int i = 0; i < nodeParts.length; i += 3) {
@@ -579,7 +593,7 @@ public class Gui extends Application {
         });
       }
 
-      // --- 3. Läs resterande rader: förbindelser ---
+      // Läser in alla förbindelser
       while (scanner.hasNextLine()) {
         String[] parts = scanner.nextLine().split(";");
         if (parts.length < 4) continue;
