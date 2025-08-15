@@ -204,25 +204,12 @@ public class Gui extends Application {
         mapLayer.getChildren().add(mapView);
       }
 
-      /*// Vänta på att bilden är helt laddad innan centrering
       Platform.runLater(() -> {
-        mapView.setLayoutX((mapLayer.getWidth() - mapView.getBoundsInLocal().getWidth()) / 2);
-        mapView.setLayoutY((mapLayer.getHeight() - mapView.getBoundsInLocal().getHeight()) / 2);
-      }); */
-      /*image.progressProperty().addListener((obs, oldVal, newVal) -> {
-        if (newVal.doubleValue() == 1.0) {
-          centerImage();
-        }
-      });*/
-      Platform.runLater(() -> {
-
         centerImage();
         enableAllButtons();
         hasUnsavedChanges = false;
       });
 
-      //enableAllButtons();// Aktivera knapparna efter bildval så att användaren kan fortsätta
-      //hasUnsavedChanges = false;
     }
   }
   private void centerImage() {
@@ -303,7 +290,7 @@ public class Gui extends Application {
     // Fråga efter typ av resa
     TextInputDialog typeDialog = new TextInputDialog("road");
     typeDialog.setTitle("Connection Type");
-    typeDialog.setHeaderText("Enter type of connection (e.g., road, rail, air):");
+    typeDialog.setHeaderText("Enter type of connection from " + from.getName() +  " to " + to.getName());
     Optional<String> typeResult = typeDialog.showAndWait();
     if (typeResult.isEmpty()) return;
     String connType = typeResult.get().trim();
@@ -315,7 +302,7 @@ public class Gui extends Application {
     // Fråga efter tid
     TextInputDialog timeDialog = new TextInputDialog("1");
     timeDialog.setTitle("Connection Time");
-    timeDialog.setHeaderText("Enter travel time for the connection:");
+    timeDialog.setHeaderText("Enter travel time from " + from.getName() + " to " + to.getName());
     Optional<String> timeResult = timeDialog.showAndWait();
     if (timeResult.isEmpty()) return;
 
@@ -558,13 +545,6 @@ public class Gui extends Application {
       if(!mapLayer.getChildren().contains(mapView)) {
         mapLayer.getChildren().add(mapView);
       }
-      /*image.progressProperty().addListener((obs, oldVal, newVal) -> {
-        if(newVal.doubleValue() == 1.0) {
-          centerImage();
-          enableAllButtons();
-          hasUnsavedChanges = false;
-        }
-      }); */
 
       Platform.runLater(() -> {
         centerImage();
@@ -581,8 +561,6 @@ public class Gui extends Application {
         double y = Double.parseDouble(nodeParts[i + 2].trim());
 
         Location location = new Location(name, x, y);
-        //location.setLayoutX(x);
-        //location.setLayoutY(y);
         locations.add(location);
         graph.add(location);
         mapLayer.getChildren().add(location);
@@ -622,21 +600,6 @@ public class Gui extends Application {
           }
         }
       }
-
-      /*//Centrera kartbilden
-      Platform.runLater(() -> {
-        double offsetX = (mapLayer.getWidth() - img.getWidth()) / 2;
-        double offsetY = (mapLayer.getHeight() - img.getHeight()) / 2;
-        mapView.setLayoutX(offsetX);
-        mapView.setLayoutY(offsetY);
-
-        //for (Location loc : locations) {
-          //loc.setLayoutX(loc.getLayoutX() + offsetX);
-          //loc.setLayoutY(loc.getLayoutY() + offsetY);
-        //}
-        enableAllButtons();
-        hasUnsavedChanges = false;
-      });*/
 
     } catch (IOException e) {
       showErrorDialog("Fel vid inläsning av filen: " + e.getMessage());
