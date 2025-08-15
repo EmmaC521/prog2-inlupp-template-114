@@ -10,15 +10,18 @@ import java.util.*;
 
 public class ListGraph<T> implements Graph<T> {
 
+  //HashMap som håller varje nod och dess kanter
   private Map<T, Set<Edge<T>>> cities = new HashMap<>();
 
   @Override
   public void add(T node) {
+    //Lägg till nod om den inte redan existerar
     cities.putIfAbsent(node, new HashSet<>());
   }
 
   @Override
   public void connect(T node1, T node2, String name, int weight) {
+    //Kontrollera att båda noderna finns innan kant skapas
     if (!cities.containsKey(node1) || !cities.containsKey(node2)) {
       throw new NoSuchElementException("En eller båda platserna saknas");
     }
@@ -37,6 +40,7 @@ public class ListGraph<T> implements Graph<T> {
   public void setConnectionWeight(T node1, T node2, int weight) {
     if (weight < 0) throw new IllegalArgumentException("Vikten får inte vara negativ");
 
+    //Kontrollera att noderna finns
     if (!cities.containsKey(node1) || !cities.containsKey(node2)) {
       throw new NoSuchElementException("En eller båda platserna saknas");
     }
@@ -54,11 +58,13 @@ public class ListGraph<T> implements Graph<T> {
 
   @Override
   public Set<T> getNodes() {
+    //Returnera en kopia av alla kanter
     return new HashSet<>(cities.keySet());
   }
 
   @Override
   public Collection<Edge<T>> getEdgesFrom(T node) {
+    //Kontrollera att noden finns och returnera kopia av kanterna
     if (!cities.containsKey(node)) throw new NoSuchElementException("Platsen saknas");
 
     return new HashSet<>(cities.get(node));
@@ -66,9 +72,10 @@ public class ListGraph<T> implements Graph<T> {
 
   @Override
   public Edge<T> getEdgeBetween(T node1, T node2) {
+    //Kontrollera att båda noderna existerar
     if (!cities.containsKey(node1) || !cities.containsKey(node2))
       throw new NoSuchElementException("En av platserna saknas");
-
+    //Leta upp kant som leder från nod1 till nod2
     for (Edge<T> edge : cities.get(node1)) {
       if (edge.getDestination().equals(node2)) {
         return edge;
@@ -79,9 +86,10 @@ public class ListGraph<T> implements Graph<T> {
 
   @Override
   public void disconnect(T node1, T node2) {
+    //Kontrollera att båda noderna existerar
     if (!cities.containsKey(node1) || !cities.containsKey(node2))
       throw new NoSuchElementException("En av platserna saknas");
-
+    //Hämta båda riktningarnas kanter
     Edge<T> edge1 = getEdgeBetween(node1, node2);
     Edge<T> edge2 = getEdgeBetween(node2, node1);
 
@@ -97,13 +105,14 @@ public class ListGraph<T> implements Graph<T> {
   public void remove(T node) {
     if (!cities.containsKey(node)) throw new NoSuchElementException("Platsen saknas");
 
+    //Kopiera alla kanter innan de tas bort
     Set<Edge> edges = new HashSet<>(cities.get(node));
-
+    //Tar bort alla kanter till noden
     for (Edge<T> edge : edges) {
       T neighbor = edge.getDestination();
       disconnect(node, neighbor);
     }
-
+    //Ta bort noden från kartan
     cities.remove(node);
   }
 
@@ -112,7 +121,7 @@ public class ListGraph<T> implements Graph<T> {
     if (!cities.containsKey(from) || !cities.containsKey(to)) {
       return false;
     }
-
+    //Bredden Först Sökning för att se om det finns en väg mellan noderna
     Set<T> visited = new HashSet<>();
     Queue<T> queue = new LinkedList<>();
     queue.add(from);
@@ -140,6 +149,7 @@ public class ListGraph<T> implements Graph<T> {
       if (!cities.containsKey(node1) || !cities.containsKey(node2)) {
         throw new NoSuchElementException("En eller båda noderna saknas");
       }
+      //Bredden Först Sökning för att bygga upp väg mellan platserna
       Map<T, T> cameFrom = new HashMap<>();
       cameFrom.put(node1, null);
 
@@ -157,6 +167,7 @@ public class ListGraph<T> implements Graph<T> {
           }
         }
       }
+      //Om nod 2 inte kan nås finns ingen väg
       if (!cameFrom.containsKey(node2)) {
         return null;
       }
