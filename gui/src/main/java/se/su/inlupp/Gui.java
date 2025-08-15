@@ -17,13 +17,10 @@ import javafx.scene.control.TextInputDialog;
 import javafx.scene.Cursor;
 import javafx.scene.paint.Color;
 import javafx.application.Platform;
-
 import java.util.*;
-
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.shape.Line;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 
@@ -56,7 +53,6 @@ public class Gui extends Application {
 
   @Override
   public void start(Stage stage) {
-    //Kommer att användas senare
 
     //Menyn "file"
     Menu fileMenu = new Menu("File");
@@ -206,8 +202,11 @@ public class Gui extends Application {
     mapLayer.setPrefWidth(mapView.getBoundsInLocal().getWidth());
     mapLayer.setPrefHeight(mapView.getBoundsInLocal().getHeight());
 
-    enableAllButtons();
-    hasUnsavedChanges = false;
+    Platform.runLater(() -> {
+      centerImage();
+      enableAllButtons();
+      hasUnsavedChanges = false;
+    });
   }
 
   private void centerImage() {
@@ -616,7 +615,7 @@ public class Gui extends Application {
   }
 
 
-  //Ny drawconnection
+  //Ny draw connection
   private void drawConnection(Location from, Location to) {
 
     double startX = from.localToParent(from.getBoundsInLocal()).getMinX() + from.getBoundsInLocal().getWidth() / 2;
