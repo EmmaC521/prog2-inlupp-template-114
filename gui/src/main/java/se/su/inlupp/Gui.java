@@ -544,7 +544,7 @@ public class Gui extends Application {
     File file = fileChooser.showOpenDialog(stage);
     if (file == null) return;
 
-    // Rensar nuvarande data så
+    // Rensar nuvarande data så gammal data inte ligger kvar när vi laddar upp ny bild
     locations.clear();
     mapLayer.getChildren().clear();
     mapLayer.getChildren().add(mapView);
@@ -559,11 +559,12 @@ public class Gui extends Application {
       // Läser första raden URL till kartbilden
       if (!scanner.hasNextLine()) return;
       String imageUrl = scanner.nextLine().trim();
+      //Anpassar kartans storlek och behåller dess proportioner
       Image image = new Image(imageUrl, 650, 700, true, true);
       mapView.setImage(image);
       mapView.setPreserveRatio(true);
 
-      //Anpassa kartans storlek och behåller proportionerna
+
       mapLayer.setPrefWidth(650);
       mapLayer.setPrefHeight(700);
 
@@ -590,6 +591,7 @@ public class Gui extends Application {
         graph.add(location);
         mapLayer.getChildren().add(location);
 
+        //Tillåter endast att två platser är markerade samtidigt
         location.setOnMouseClicked(ev -> {
           ev.consume();
           long selectedCount = locations.stream().filter(Location::isSelected).count();
@@ -603,7 +605,7 @@ public class Gui extends Application {
         });
       }
 
-      // Läser in alla förbindelser
+      // Läser in alla förbindelser och ritar linjer på kartan mellan platserna
       while (scanner.hasNextLine()) {
         String[] parts = scanner.nextLine().split(";");
         if (parts.length < 4) continue;
