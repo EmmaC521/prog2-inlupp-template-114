@@ -32,7 +32,7 @@ import java.io.File;
 public class Gui extends Application {
 
 
-  //Skapar knapparna som instansvariabler
+  //Skapar knapparna
   private final Button findPathButton = new Button ("Find Path");
   private final Button showConnectionButton = new Button ("Show Connection");
   private final Button newPlaceButton = new Button ("New Place");
@@ -245,10 +245,10 @@ public class Gui extends Application {
           locations.add(loc);
           graph.add(loc);
 
-          //  Lägg till platsen ovanpå kartbilden
+
           ((Pane) mapView.getParent()).getChildren().add(loc);
 
-          // Gör platsen klickbar för att markera/avmarkera
+
           loc.setOnMouseClicked(ev -> {
             ev.consume();
             long selectedCount = locations.stream().filter(Location::isSelected).count();
@@ -285,7 +285,7 @@ public class Gui extends Application {
       return;
     }
 
-    // Fråga efter typ av resa
+
     TextInputDialog typeDialog = new TextInputDialog("road");
     typeDialog.setTitle("Connection Type");
     typeDialog.setHeaderText("Enter type of connection from " + from.getName() +  " to " + to.getName());
@@ -297,7 +297,7 @@ public class Gui extends Application {
       return;
     }
 
-    // Fråga efter tid
+
     TextInputDialog timeDialog = new TextInputDialog("1");
     timeDialog.setTitle("Connection Time");
     timeDialog.setHeaderText("Enter travel time from " + from.getName() + " to " + to.getName());
@@ -311,12 +311,12 @@ public class Gui extends Application {
         return;
       }
 
-      // Lägg till kanten
+
       graph.connect(from, to, connType, weight);
       drawConnection(from, to);
       hasUnsavedChanges = true;
 
-      // Avmarkera
+
       from.toggleSelection();
       to.toggleSelection();
 
@@ -347,11 +347,11 @@ public class Gui extends Application {
       return;
     }
 
-    // Visa nuvarande typ
+
     String currentType = edge.getName();
     String currentTime = String.valueOf(edge.getWeight());
 
-    // Fråga om ny tid
+
     TextInputDialog timeDialog = new TextInputDialog(currentTime);
     timeDialog.setTitle("Change Connection");
     timeDialog.setHeaderText("Change travel time for: " + from.getName() + " ↔ " + to.getName() +
@@ -366,12 +366,12 @@ public class Gui extends Application {
         return;
       }
 
-      // Om Edge har setWeight()
+
       try {
         edge.setWeight(newTime);
       } catch (NoSuchMethodError | UnsupportedOperationException ex) {
-        // Om det inte finns setWeight i Edge-klassen, koppla om kanten
-        graph.disconnect(from, to); // Kräver att du har en disconnect-metod
+
+        graph.disconnect(from, to);
         graph.connect(from, to, currentType, newTime);
       }
 
@@ -618,7 +618,7 @@ public class Gui extends Application {
 
   //Ny drawconnection
   private void drawConnection(Location from, Location to) {
-    // Hämta platsens mitt i mapLayer-koordinater
+
     double startX = from.localToParent(from.getBoundsInLocal()).getMinX() + from.getBoundsInLocal().getWidth() / 2;
     double startY = from.localToParent(from.getBoundsInLocal()).getMinY() + from.getBoundsInLocal().getHeight() / 2;
 
@@ -629,7 +629,7 @@ public class Gui extends Application {
     line.setStroke(Color.BLACK);
     line.setStrokeWidth(2);
 
-    // Lägg linjen längst bak i mapLayer
+
     int imgIdx = mapLayer.getChildren().indexOf(mapView);
     mapLayer.getChildren().add(imgIdx + 1, line);
   }
