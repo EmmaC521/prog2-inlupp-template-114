@@ -285,26 +285,27 @@ public class Gui extends Application {
       }
     });
   }
-
+  // Hanterar när användaren vill skapa en ny förbindelse mellan två platser
   private void handleNewConnection() {
+    // Hämtar alla markerade platser
     List<Location> selected = locations.stream()
             .filter(Location::isSelected)
             .toList();
-
+    // Kontrollera att exakt två platser är markerade
     if (selected.size() != 2) {
       showError("Select exactly TWO places to connect.");
       return;
     }
-
+    // Spara de två valda platserna
     Location from = selected.get(0);
     Location to = selected.get(1);
-
+    // Kolla om förbindelsen redan finns
     if (graph.getEdgeBetween(from, to) != null) {
       showError("Connection already exists between these two places.");
       return;
     }
 
-
+    // Fråga användaren om typ av förbindelse (t.ex. road, flight)
     TextInputDialog typeDialog = new TextInputDialog("road");
     typeDialog.setTitle("Connection Type");
     typeDialog.setHeaderText("Enter type of connection from " + from.getName() +  " to " + to.getName());
@@ -316,13 +317,13 @@ public class Gui extends Application {
       return;
     }
 
-
+    // Fråga användaren om restid/vikt
     TextInputDialog timeDialog = new TextInputDialog("1");
     timeDialog.setTitle("Connection Time");
     timeDialog.setHeaderText("Enter travel time from " + from.getName() + " to " + to.getName());
     Optional<String> timeResult = timeDialog.showAndWait();
     if (timeResult.isEmpty()) return;
-
+    // Försöker konvertera inmatningen till ett positivt heltal
     try {
       int weight = Integer.parseInt(timeResult.get().trim());
       if (weight <= 0) {
@@ -330,28 +331,28 @@ public class Gui extends Application {
         return;
       }
 
-
+      // Lägg till förbindelsen i grafen
       graph.connect(from, to, connType, weight);
-      drawConnection(from, to);
-      hasUnsavedChanges = true;
+      drawConnection(from, to);     // Rita linjen på kartan
+      hasUnsavedChanges = true;       // Markera att projektet ändrats sedan senaste sparning
 
-
+      // Avmarkera platserna efter att förbindelsen skapats
       from.toggleSelection();
       to.toggleSelection();
 
     } catch (NumberFormatException e) {
-      showError("Invalid number. Please enter an integer.");
+      showError("Invalid number. Please enter an integer.");    // Fel om användaren skrev något som inte är ett heltal
     } catch (IllegalStateException e) {
-      showError("Connection already exists.");
+      showError("Connection already exists.");                  // Fel om förbindelsen redan finns
     }
   }
 
-
+      // Kopplad till knappen "Change Connection" – ändrar vikten (tiden) för en befintlig förbindelse
   private void handleChangeConnection() {
     List<Location> selected = locations.stream()
             .filter(Location::isSelected)
             .toList();
-
+    // Måste vara exakt två markerade för att kunna ändra en förbindelse
     if (selected.size() != 2) {
       showError("Select exactly TWO places to change connection.");
       return;
@@ -359,7 +360,7 @@ public class Gui extends Application {
 
     Location from = selected.get(0);
     Location to = selected.get(1);
-
+    // Kollar om en förbindelse faktiskt finns
     Edge<Location> edge = graph.getEdgeBetween(from, to);
     if (edge == null) {
       showError("No connection exists between these places.");
@@ -370,7 +371,7 @@ public class Gui extends Application {
     String currentType = edge.getName();
     String currentTime = String.valueOf(edge.getWeight());
 
-
+    // Frågar efter det nya värdet
     TextInputDialog timeDialog = new TextInputDialog(currentTime);
     timeDialog.setTitle("Change Connection");
     timeDialog.setHeaderText("Change travel time for: " + from.getName() + " ↔ " + to.getName() +
@@ -457,22 +458,24 @@ public class Gui extends Application {
 
     selectedStart.forEach(Location::toggleSelection);
   }
-
+  // Hämtar alla platser som är markerade just nu
   private void handleShowConnection() {
     List<Location> selected = locations.stream()
             .filter(Location::isSelected)
             .toList();
-
+    // Kontrollerar att exakt två platser är markerade
     if (selected.size() != 2) {
       showError("Select exactly TWO places to check connection.");
       return;
     }
-
+    // Tar fram de två markerade platserna
     Location from = selected.get(0);
     Location to = selected.get(1);
 
+    // Hämtar kanten (förbindelsen) mellan platserna, om den finns
     Edge<Location> edge = graph.getEdgeBetween(from, to);
     if (edge != null) {
+      // Om det finns en förbindelse → visa information om den
       Alert alert = new Alert(Alert.AlertType.INFORMATION);
       alert.setTitle("Connection Info");
       alert.setHeaderText("There is a connection:");
@@ -481,6 +484,7 @@ public class Gui extends Application {
               + "\nType: " + edge.getName());
       alert.showAndWait();
     } else {
+      // Om det inte finns en förbindelse → visa meddelande om det
       Alert alert = new Alert(Alert.AlertType.INFORMATION);
       alert.setTitle("No Connection");
       alert.setHeaderText("No connection exists between:");
