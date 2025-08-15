@@ -665,11 +665,12 @@ public class Gui extends Application {
     double endY = to.localToParent(to.getBoundsInLocal()).getMinY() + to.getBoundsInLocal().getHeight() / 2;
 
     Line line = new Line(startX, startY, endX, endY);
-    line.setStroke(Color.GRAY);
+    line.setStroke(Color.BLACK);
     line.setStrokeWidth(2);
 
     // Lägg linjen längst bak i mapLayer
-    mapLayer.getChildren().add(0, line);
+    int imgIdx = mapLayer.getChildren().indexOf(mapView);
+    mapLayer.getChildren().add(imgIdx + 1, line);
   }
 
 
