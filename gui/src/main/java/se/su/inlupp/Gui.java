@@ -454,9 +454,8 @@ public class Gui extends Application {
     Location from = selected.get(0);
     Location to = selected.get(1);
 
-    if (graph.pathExists(from, to)) {
-      Edge<Location> edge = graph.getEdgeBetween(from, to);
-
+    Edge<Location> edge = graph.getEdgeBetween(from, to);
+    if (edge != null) {
       Alert alert = new Alert(Alert.AlertType.INFORMATION);
       alert.setTitle("Connection Info");
       alert.setHeaderText("There is a connection:");
