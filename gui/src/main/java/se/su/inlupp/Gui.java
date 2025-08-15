@@ -48,7 +48,8 @@ public class Gui extends Application {
   private final Pane mapLayer = new Pane();
   private boolean hasUnsavedChanges = false;
 
-  private boolean confirmDiscardIfDirty() {
+  //Metod som hanterar felmeddelande om det finns osparade ändringar.
+  private boolean confirmDiscardUnsavedChanges() {
     if (!hasUnsavedChanges) return true;
     Alert a = new Alert(Alert.AlertType.CONFIRMATION, "Discard unsaved changes?", ButtonType.OK, ButtonType.CANCEL);
     a.setTitle("Unsaved changes");
@@ -102,7 +103,7 @@ public class Gui extends Application {
     //Kopplar menyvalet "New map" till metoden handleNewMap
     newMapItem.setOnAction(e -> handleNewMap(stage));
     //Stänger fönstret när "Exit" väljs
-    exitItem.setOnAction(e -> { if (confirmDiscardIfDirty()) stage.close(); });
+    exitItem.setOnAction(e -> { if (confirmDiscardUnsavedChanges()) stage.close(); });
     //openItem.setOnAction(e-> handleOpen(stage)); //Eventhanterare för menyval open
     saveItem.setOnAction(e-> handleSave(stage)); //Eventhanterare för menyval save ev flytta ned
 
@@ -117,7 +118,7 @@ public class Gui extends Application {
     changeConnectionButton.setOnAction(e -> handleChangeConnection());
 
 
-    stage.setOnCloseRequest(evt -> { if (!confirmDiscardIfDirty()) evt.consume(); });
+    stage.setOnCloseRequest(evt -> { if (!confirmDiscardUnsavedChanges()) evt.consume(); });
 
 
   }
@@ -187,7 +188,7 @@ public class Gui extends Application {
 
   private void handleNewMap(Stage stage) {
     //Kontrollerar osparade ändringar
-    if (!confirmDiscardIfDirty()) return;
+    if (!confirmDiscardUnsavedChanges()) return;
 
     //Skapar filväljare för kartbild och tillåter 4 filformat.
     FileChooser fileChooser = new FileChooser();
@@ -535,7 +536,7 @@ public class Gui extends Application {
   
   private void handleOpen(Stage stage) {
     //Kollar om det finns osparade ändringar
-    if (!confirmDiscardIfDirty()) return;
+    if (!confirmDiscardUnsavedChanges()) return;
     // Öppnar filväljare och dialog och ser till att filen sparas som *.graph
     FileChooser fileChooser = new FileChooser();
     fileChooser.setTitle("Open Graph File");
