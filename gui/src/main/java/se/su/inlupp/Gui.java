@@ -178,40 +178,38 @@ public class Gui extends Application {
 
   }
 
-  //Metod som körs när användaren väljer "New Map" i menyn
   private void handleNewMap(Stage stage) {
     if (!confirmDiscardIfDirty()) return;
 
-    FileChooser fileChooser = new FileChooser(); //Öppnar filväljaren
-    fileChooser.setTitle("Open Map Image"); //Titel i filväljaren
+    FileChooser fileChooser = new FileChooser();
+    fileChooser.setTitle("Open Map Image");
     fileChooser.getExtensionFilters().add(
             new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg", "*.gif")
     );
 
-    File file = fileChooser.showOpenDialog(stage); //Visar dialog och väntar på filval
-    if (file != null) {
-      //Laddar bilden och den valda filen
-      Image image = new Image(file.toURI().toString(), 650, 700 , true, true);
-      mapView.setImage(image); //Visar bilden i gränssnittet
-      mapView.setPreserveRatio(true); //Bevarar bildens proportioner
-      //mapView.setFitWidth(650); //Sätter bildens bredd
-      //mapView.setFitHeight(700); //Sätter bildens höjd
+    File file = fileChooser.showOpenDialog(stage);
+    if (file == null) return;
 
-      mapLayer.setPrefWidth(650);
-      mapLayer.setPrefHeight(700); //Test
-
-      if (!mapLayer.getChildren().contains(mapView)) {
-        mapLayer.getChildren().add(mapView);
-      }
-
-      Platform.runLater(() -> {
-        centerImage();
-        enableAllButtons();
-        hasUnsavedChanges = false;
-      });
-
+    locations.clear();
+    for (Location n : new ArrayList<>(graph.getNodes())) {
+      graph.remove(n);
     }
+    mapLayer.getChildren().clear();
+    mapLayer.getChildren().add(mapView);
+
+    Image image = new Image(file.toURI().toString(), 650, 700, true, true);
+    mapView.setImage(image);
+    mapView.setPreserveRatio(true);
+    mapView.setFitWidth(650);
+    mapView.setFitHeight(700);
+
+    mapLayer.setPrefWidth(mapView.getBoundsInLocal().getWidth());
+    mapLayer.setPrefHeight(mapView.getBoundsInLocal().getHeight());
+
+    enableAllButtons();
+    hasUnsavedChanges = false;
   }
+
   private void centerImage() {
     if (mapView.getImage() == null) return;
 
