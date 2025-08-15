@@ -1,7 +1,6 @@
 package se.su.inlupp;
 
 import javafx.application.Application;
-import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -9,7 +8,6 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
-import javafx.scene.image.WritableImage;
 import javafx.scene.layout.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -19,12 +17,13 @@ import javafx.scene.control.TextInputDialog;
 import javafx.scene.Cursor;
 import javafx.scene.paint.Color;
 import javafx.application.Platform;
+
 import java.util.*;
+
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.shape.Line;
-
-import javax.imageio.ImageIO;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 
@@ -33,7 +32,7 @@ import java.io.File;
 public class Gui extends Application {
 
 
-  //Skapar knapparna
+  //Knapparna i översta knappraden (kopplas till respektive handle*-metod i start())
   private final Button findPathButton = new Button ("Find Path");
   private final Button showConnectionButton = new Button ("Show Connection");
   private final Button newPlaceButton = new Button ("New Place");
@@ -57,6 +56,7 @@ public class Gui extends Application {
 
   @Override
   public void start(Stage stage) {
+    //Kommer att användas senare
 
     //Menyn "file"
     Menu fileMenu = new Menu("File");
@@ -107,7 +107,6 @@ public class Gui extends Application {
     saveItem.setOnAction(e-> handleSave(stage)); //Eventhanterare för menyval save ev flytta ned
 
     openItem.setOnAction(e -> handleOpen(stage));
-    saveImageItem.setOnAction(e -> handleSaveImage(stage));
 
     //  När "New Place" klickas, kör metoden nedan
     findPathButton.setOnAction(e -> handleFindPath());
@@ -179,52 +178,58 @@ public class Gui extends Application {
 
   }
 
+  //Metod som körs när användaren väljer "New Map" i menyn
   private void handleNewMap(Stage stage) {
     if (!confirmDiscardIfDirty()) return;
 
-    FileChooser fileChooser = new FileChooser();
-    fileChooser.setTitle("Open Map Image");
+    FileChooser fileChooser = new FileChooser(); //Öppnar filväljaren
+    fileChooser.setTitle("Open Map Image"); //Titel i filväljaren
     fileChooser.getExtensionFilters().add(
             new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg", "*.gif")
     );
 
-    File file = fileChooser.showOpenDialog(stage);
-    if (file == null) return;
+    File file = fileChooser.showOpenDialog(stage); //Visar dialog och väntar på filval
+    if (file != null) {
+      //Laddar bilden och den valda filen
+      Image image = new Image(file.toURI().toString(), 650, 0 , true, true);
+      mapView.setImage(image); //Visar bilden i gränssnittet
+      mapView.setPreserveRatio(true); //Bevarar bildens proportioner
+      //mapView.setFitWidth(650); //Sätter bildens bredd
+      //mapView.setFitHeight(700); //Sätter bildens höjd
 
-    locations.clear();
-    for (Location n : new ArrayList<>(graph.getNodes())) {
-      graph.remove(n);
-    }
-    mapLayer.getChildren().clear();
-    mapLayer.getChildren().add(mapView);
+      mapLayer.setPrefWidth(650);
+      mapLayer.setPrefHeight(image.getHeight());
 
-    Image image = new Image(file.toURI().toString(), 650, 700, true, true);
-    mapView.setImage(image);
-    mapView.setPreserveRatio(true);
-    mapView.setFitWidth(650);
-    mapView.setFitHeight(700);
+      if (!mapLayer.getChildren().contains(mapView)) {
+        mapLayer.getChildren().add(mapView);
+      }
 
-    mapLayer.setPrefWidth(mapView.getBoundsInLocal().getWidth());
-    mapLayer.setPrefHeight(mapView.getBoundsInLocal().getHeight());
+      /*// Vänta på att bilden är helt laddad innan centrering
+      Platform.runLater(() -> {
+        mapView.setLayoutX((mapLayer.getWidth() - mapView.getBoundsInLocal().getWidth()) / 2);
+        mapView.setLayoutY((mapLayer.getHeight() - mapView.getBoundsInLocal().getHeight()) / 2);
+      }); */
+      image.progressProperty().addListener((obs, oldVal, newVal) -> {
+        if (newVal.doubleValue() == 1.0) {
+          centerImage();
+        }
+      });
 
-    Platform.runLater(() -> {
-      centerImage();
-      enableAllButtons();
+      enableAllButtons();// Aktivera knapparna efter bildval så att användaren kan fortsätta
       hasUnsavedChanges = false;
-    });
+    }
   }
-
   private void centerImage() {
     if (mapView.getImage() == null) return;
 
-    double offsetX = (mapLayer.getWidth() - mapView.getBoundsInLocal().getWidth()) / 2;
-    double offsetY = (mapLayer.getHeight() - mapView.getBoundsInLocal().getHeight()) / 2;
+    double offsetX = (mapLayer.getWidth() - mapView.getBoundsInLocal().getWidth() / 2);
+    double offsetY = (mapLayer.getHeight() - mapView.getBoundsInLocal().getHeight() / 2);
 
     mapView.setLayoutX(offsetX);
     mapView.setLayoutY(offsetY);
 
   }
-
+  // Väntar på ett klick på kartan, frågar om namn, skapar Location, gör den klickbar (max 2 val)
   private void handleNewPlace() {
     newPlaceButton.setDisable(true);
     mapView.setCursor(Cursor.CROSSHAIR);
@@ -249,10 +254,10 @@ public class Gui extends Application {
           locations.add(loc);
           graph.add(loc);
 
-
+          //  Lägg till platsen ovanpå kartbilden
           ((Pane) mapView.getParent()).getChildren().add(loc);
 
-
+          // Gör platsen klickbar för att markera/avmarkera
           loc.setOnMouseClicked(ev -> {
             ev.consume();
             long selectedCount = locations.stream().filter(Location::isSelected).count();
@@ -270,7 +275,7 @@ public class Gui extends Application {
       }
     });
   }
-
+  // Frågar typ och tid, anropar graph.connect(from,to,type,weight)
   private void handleNewConnection() {
     List<Location> selected = locations.stream()
             .filter(Location::isSelected)
@@ -289,10 +294,10 @@ public class Gui extends Application {
       return;
     }
 
-
+    // Fråga efter typ av resa
     TextInputDialog typeDialog = new TextInputDialog("road");
     typeDialog.setTitle("Connection Type");
-    typeDialog.setHeaderText("Enter type of connection from " + from.getName() +  " to " + to.getName());
+    typeDialog.setHeaderText("Enter type of connection (e.g., road, rail, air):");
     Optional<String> typeResult = typeDialog.showAndWait();
     if (typeResult.isEmpty()) return;
     String connType = typeResult.get().trim();
@@ -301,10 +306,10 @@ public class Gui extends Application {
       return;
     }
 
-
+    // Fråga efter tid
     TextInputDialog timeDialog = new TextInputDialog("1");
     timeDialog.setTitle("Connection Time");
-    timeDialog.setHeaderText("Enter travel time from " + from.getName() + " to " + to.getName());
+    timeDialog.setHeaderText("Enter travel time for the connection:");
     Optional<String> timeResult = timeDialog.showAndWait();
     if (timeResult.isEmpty()) return;
 
@@ -315,12 +320,12 @@ public class Gui extends Application {
         return;
       }
 
-
+      // Lägg till kanten
       graph.connect(from, to, connType, weight);
       drawConnection(from, to);
       hasUnsavedChanges = true;
 
-
+      // Avmarkera båda efteråt så att nästa operation kan välja nya
       from.toggleSelection();
       to.toggleSelection();
 
@@ -331,7 +336,7 @@ public class Gui extends Application {
     }
   }
 
-
+  //Hämtar kant via graph.getEdgeBetween, frågar ny tid, uppdaterar kant (eller disconnect+reconnect)
   private void handleChangeConnection() {
     List<Location> selected = locations.stream()
             .filter(Location::isSelected)
@@ -351,11 +356,11 @@ public class Gui extends Application {
       return;
     }
 
-
+    // Visa nuvarande typ
     String currentType = edge.getName();
     String currentTime = String.valueOf(edge.getWeight());
 
-
+    // Fråga om ny tid
     TextInputDialog timeDialog = new TextInputDialog(currentTime);
     timeDialog.setTitle("Change Connection");
     timeDialog.setHeaderText("Change travel time for: " + from.getName() + " ↔ " + to.getName() +
@@ -370,12 +375,12 @@ public class Gui extends Application {
         return;
       }
 
-
+      // Om Edge har setWeight()
       try {
         edge.setWeight(newTime);
       } catch (NoSuchMethodError | UnsupportedOperationException ex) {
-
-        graph.disconnect(from, to);
+        // Om det inte finns setWeight i Edge-klassen, koppla om kanten
+        graph.disconnect(from, to); // Kräver att du har en disconnect-metod
         graph.connect(from, to, currentType, newTime);
       }
 
@@ -387,7 +392,7 @@ public class Gui extends Application {
       showError("Invalid number. Please enter an integer.");
     }
   }
-
+  //Använder metoden findPath(start, end) för att hitta kortaste vägen mellan två platse
   private void handleFindPath() {
     List<Location> selectedStart = locations.stream()
             .filter(Location::isSelected)
@@ -454,8 +459,9 @@ public class Gui extends Application {
     Location from = selected.get(0);
     Location to = selected.get(1);
 
-    Edge<Location> edge = graph.getEdgeBetween(from, to);
-    if (edge != null) {
+    if (graph.pathExists(from, to)) {
+      Edge<Location> edge = graph.getEdgeBetween(from, to);
+
       Alert alert = new Alert(Alert.AlertType.INFORMATION);
       alert.setTitle("Connection Info");
       alert.setHeaderText("There is a connection:");
@@ -474,7 +480,7 @@ public class Gui extends Application {
     // Avmarkera båda efter visning
     selected.forEach(Location::toggleSelection);
   }
-
+  // Bygger kortaste vägen i antal steg
   private List<Location> findPath(Location start, Location end) {
     if (start.equals(end)) {
       return List.of(start);
@@ -535,22 +541,23 @@ public class Gui extends Application {
       // Läs första raden: URL till kartbilden
       if (!scanner.hasNextLine()) return;
       String imageUrl = scanner.nextLine().trim();
-      Image image = new Image(imageUrl, 650, 700, true, true);
+      Image image = new Image(imageUrl, 650, 0, true, true);
       mapView.setImage(image);
       mapView.setPreserveRatio(true);
-      //mapView.setMouseTransparent(true);
+      mapView.setMouseTransparent(true);
 
       mapLayer.setPrefWidth(650);
-      mapLayer.setPrefHeight(700); //TEST
+      mapLayer.setPrefHeight(image.getHeight());
 
       if(!mapLayer.getChildren().contains(mapView)) {
         mapLayer.getChildren().add(mapView);
       }
-
-      Platform.runLater(() -> {
-        centerImage();
-        enableAllButtons();
-        hasUnsavedChanges = false;
+      image.progressProperty().addListener((obs, oldVal, newVal) -> {
+        if(newVal.doubleValue() == 1.0) {
+          centerImage();
+          enableAllButtons();
+          hasUnsavedChanges = false;
+        }
       });
 
       // Läs andra raden: alla noder
@@ -562,6 +569,8 @@ public class Gui extends Application {
         double y = Double.parseDouble(nodeParts[i + 2].trim());
 
         Location location = new Location(name, x, y);
+        //location.setLayoutX(x);
+        //location.setLayoutY(y);
         locations.add(location);
         graph.add(location);
         mapLayer.getChildren().add(location);
@@ -602,22 +611,24 @@ public class Gui extends Application {
         }
       }
 
+      /*//Centrera kartbilden
+      Platform.runLater(() -> {
+        double offsetX = (mapLayer.getWidth() - img.getWidth()) / 2;
+        double offsetY = (mapLayer.getHeight() - img.getHeight()) / 2;
+        mapView.setLayoutX(offsetX);
+        mapView.setLayoutY(offsetY);
+
+        //for (Location loc : locations) {
+          //loc.setLayoutX(loc.getLayoutX() + offsetX);
+          //loc.setLayoutY(loc.getLayoutY() + offsetY);
+        //}
+        enableAllButtons();
+        hasUnsavedChanges = false;
+      });*/
+
     } catch (IOException e) {
       showErrorDialog("Fel vid inläsning av filen: " + e.getMessage());
       e.printStackTrace();
-    }
-  }
-
-  private void handleSaveImage(Stage stage) {
-    try{
-      WritableImage image = stage.getScene().snapshot(null);
-      File file = new File("capture.png");
-
-      ImageIO.write(SwingFXUtils.fromFXImage(image, null), "png", file);
-
-
-    } catch (IOException ex) {
-      showError("Failed to save image: " + ex.getMessage());
     }
   }
 
@@ -632,9 +643,9 @@ public class Gui extends Application {
   }
 
 
-  //Ny draw connection
+  //Ny drawconnection
   private void drawConnection(Location from, Location to) {
-
+    // Hämta platsens mitt i mapLayer-koordinater
     double startX = from.localToParent(from.getBoundsInLocal()).getMinX() + from.getBoundsInLocal().getWidth() / 2;
     double startY = from.localToParent(from.getBoundsInLocal()).getMinY() + from.getBoundsInLocal().getHeight() / 2;
 
@@ -642,12 +653,11 @@ public class Gui extends Application {
     double endY = to.localToParent(to.getBoundsInLocal()).getMinY() + to.getBoundsInLocal().getHeight() / 2;
 
     Line line = new Line(startX, startY, endX, endY);
-    line.setStroke(Color.BLACK);
+    line.setStroke(Color.GRAY);
     line.setStrokeWidth(2);
 
-
-    int imgIdx = mapLayer.getChildren().indexOf(mapView);
-    mapLayer.getChildren().add(imgIdx + 1, line);
+    // Lägg linjen längst bak i mapLayer
+    mapLayer.getChildren().add(0, line);
   }
 
 
