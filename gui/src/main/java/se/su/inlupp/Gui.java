@@ -238,6 +238,8 @@ public class Gui extends Application {
 
   }
 
+  //Hanterar först muspekaren när vi ska välja en ny plats (Väntar på klick, stänger av, ber dig skriva in namnet på platsen
+  //Skapar platsen, lägger till den i grafen och ritar ut den. Hanterar också ifall man markerar fler än två platser
   private void handleNewPlace() {
     newPlaceButton.setDisable(true);
     mapView.setCursor(Cursor.CROSSHAIR);
@@ -245,7 +247,7 @@ public class Gui extends Application {
     mapView.setOnMouseClicked(event -> {
       mapView.setCursor(Cursor.DEFAULT);
       newPlaceButton.setDisable(false);
-      mapView.setOnMouseClicked(null); // Används bara en gång
+      mapView.setOnMouseClicked(null);
 
       TextInputDialog dialog = new TextInputDialog();
       dialog.setTitle("New Place");
@@ -401,6 +403,8 @@ public class Gui extends Application {
     }
   }
 
+  //Använder först hjälpmetoden findPath för att få en lista med platser. Skriver sedan ut listan med
+  //hjälp av stringbuilder och en Alert
   private void handleFindPath() {
     List<Location> selectedStart = locations.stream()
             .filter(Location::isSelected)
@@ -488,6 +492,8 @@ public class Gui extends Application {
     selected.forEach(Location::toggleSelection);
   }
 
+  //En hjälpmetod som används i "handleFindPath" för att hitta en väg mellan två platser med hjälp av
+  //bredden-först-sökning. Returnerar sedan en lista med platser från start till slut eller null.
   private List<Location> findPath(Location start, Location end) {
     if (start.equals(end)) {
       return List.of(start);
@@ -522,8 +528,7 @@ public class Gui extends Application {
     return null;
   }
 
-
-
+  
   private void handleOpen(Stage stage) {
     //Kollar om det finns osparade ändringar
     if (!confirmDiscardIfDirty()) return;
@@ -622,6 +627,7 @@ public class Gui extends Application {
     }
   }
 
+  // Hanterar menyvalet "Save Image". Sparar ner en skärmdump av kartan och laddar upp den i projektmappen.
   private void handleSaveImage(Stage stage) {
     try{
       WritableImage image = stage.getScene().snapshot(null);
@@ -635,7 +641,7 @@ public class Gui extends Application {
     }
   }
 
-  // Hjälpmetod för att hitta en plats via namn
+  // Hjälpmetod som används för att hitta en plats via namn i en lista.
   private Location findLocationByName(String name) {
     for (Location loc : locations) {
       if (loc.getName().equals(name)) {
@@ -645,8 +651,8 @@ public class Gui extends Application {
     return null;
   }
 
-
-  //Ny draw connection
+  // Hämta mittpunkterna i mapLayer-koordinater (parent) för att rita linjen mellan platserna.
+  //Ser till så att linjen hamnar i rätt lager (Ovanpå kartan)
   private void drawConnection(Location from, Location to) {
 
     double startX = from.localToParent(from.getBoundsInLocal()).getMinX() + from.getBoundsInLocal().getWidth() / 2;
@@ -664,14 +670,17 @@ public class Gui extends Application {
     mapLayer.getChildren().add(imgIdx + 1, line);
   }
 
+  //Hjälpmetod som andra metoder använder för att skriva utt ERROR-meddelanden. Används för att
+  //slippa repetera kod.
   private void showError(String msg) {
     Alert alert = new Alert(Alert.AlertType.ERROR);
     alert.setTitle("Error");
     alert.setHeaderText(msg);
     alert.showAndWait();
   }
+
   //Startpunkt för programmet
   public static void main(String[] args) {
-    launch(args); //Startar JavaFX-applikationen
+    launch(args);
   }
 }
